@@ -1,0 +1,26 @@
+from snakemake.utils import min_version
+import os
+
+__AUTHOR__ = "Robin Tang"
+__EMAIL__ = "rbio_tang@foxmail.com"
+
+##### set minimum snakemake version #####
+min_version("7.32.4")
+
+##### set default params #####
+configfile: "workflow/config/config.yaml"
+
+#### include rules ####
+include: "rules/preprocess.smk"
+include: "rules/removehost.smk"
+
+rule all:
+    input:
+        "logs/01_check_run.log",
+        expand(config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",sample=get_run_sample())
+    message:
+        """
+        Start to run the pipeline. --------------------------------------------------
+        """
+    log:
+        "logs/all.log"

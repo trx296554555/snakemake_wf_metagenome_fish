@@ -1,0 +1,14 @@
+root: /home/user002/fish
+db_root: /data/sas-1-15t/database
+db:
+    kraken: kraken2_db/20230803
+    humann_chocophlan: humann3_db/chocophlan-v31
+    humann_uniref: humann3_db/uniref
+    humann_utility_mapping: humann3_db/utility_mapping
+envs: workflow/config/envs
+meta:
+    sampleList: workflow/config/sampleList.csv
+folder:
+    data: 00_cleandata
+    rm_host: 01_remove_host
+    index: ref_db
