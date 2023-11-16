@@ -13,7 +13,7 @@ rule build_index:
     threads:
         48
     message:
-        "01 make index ------------------------------------------"
+        "03: Building the index for the reference genome ------------------------------------------"
     log:
         config["root"] + "/" + config["folder"]["index"] + "/{species}_build_index.log"
     conda:
@@ -36,9 +36,9 @@ rule remove_host:
         host_fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_host_1.fq",
         host_fq2=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_host_2.fq",
     message:
-        "03 run kneaddata to remove host reads ------------------------------------------"
+        "04: Execute kneaddata to remove host reads ------------------------------------------"
     threads:
-        80
+        12
     params:
         path = config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}",
         index=get_species
@@ -51,14 +51,14 @@ rule remove_host:
             zcat {input.fq1} | sed 's/ 1.*/\/1/g' > {output.rename_fq1}
             zcat {input.fq2} | sed 's/ 2.*/\/2/g' > {output.rename_fq2}
             kneaddata -i1 {output.rename_fq1} -i2 {output.rename_fq2} --reference-db {params.index} \
-            --remove-intermediate-output --threads {threads} \
-            --max-memory 50g \
+            --threads {threads} --max-memory 50g \
+            --bypass-trf --reorder --remove-intermediate-output --decontaminate-pairs lenient \
             -o {params.path} --output-prefix {wildcards.sample} --log {params.path}/kneaddata.log \
             > {log} 2>&1
 
             mv {params.path}/{wildcards.sample}_paired_1.fastq {output.fq1}
             mv {params.path}/{wildcards.sample}_paired_2.fastq {output.fq2}
-            mv {params.path}/{wildcards.sample}_*paired_contam_1.fastq {output.host_fq1}
-            mv {params.path}/{wildcards.sample}_*paired_contam_2.fastq {output.host_fq2}
-            # rm -f {params.path}/*unmatched*
+            mv {params.path}/{wildcards.sample}_paired*_contam_1.fastq {output.host_fq1}
+            mv {params.path}/{wildcards.sample}_paired*_contam_2.fastq {output.host_fq2}
+            rm -f {params.path}/*unmatched* 
         """

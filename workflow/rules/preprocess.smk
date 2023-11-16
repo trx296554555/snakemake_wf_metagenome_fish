@@ -106,7 +106,9 @@ rule check_md5:
     input:
         config["root"] + "/" + config["folder"]["data"] + "/" + "{sample}/MD5.txt",
     output:
-        config["root"] + "/logs/md5_info/{sample}_check_md5.log",
+        config["root"] + "/logs/md5_info/{sample}_check_md5.log"
+    message:
+        "02: Verifying the MD5 checksum of FASTQ files for processing samples ------------------------------------------"
     shell:
         "cd `dirname {input}` && md5sum -c {input} > {output} || true "
 
@@ -119,7 +121,7 @@ rule check_run:
     output:
         "logs/01_check_run.log"
     message:
-        "01 Checking the samples ------------------------------------------"
+        "01: Checking which samples need processing ------------------------------------------"
     run:
         for i in input.md5:
             dir_name = os.path.basename(i).replace('_check_md5.log','')
