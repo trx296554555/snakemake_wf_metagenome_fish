@@ -75,10 +75,20 @@ custom_channels:
 EOF
 
 # mamba安装snakemake
-mamba create -c conda-forge -c bioconda -n snakemake snakemake -y
+# 指定要检测的环境名称
+env_name="snakemake"
+# 使用conda env list命令获取已安装环境列表，并使用grep命令检查环境是否存在
+conda_env_list=$(conda env list | awk '{print $1}' | grep "^$env_name$")
+# 检查环境是否存在
+if [[ -z "$conda_env_list" ]]; then
+    echo "环境 $env_name 不存在，开始创建..."
+    mamba create -c conda-forge -c bioconda -n snakemake snakemake -y
+else
+    echo "环境 $env_name 已存在"
+fi
 
 # 配置snakemake环境下的pip源
-conda activate snakemake
+source activate snakemake
 pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 python -m pip install --upgrade pip
 pip install httpx tqdm
