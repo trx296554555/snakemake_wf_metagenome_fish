@@ -58,7 +58,7 @@ rule remove_host:
 
             mv {params.path}/{wildcards.sample}_paired_1.fastq {output.fq1}
             mv {params.path}/{wildcards.sample}_paired_2.fastq {output.fq2}
-            mv {params.path}/{wildcards.sample}_paired*_contam_1.fastq {output.host_fq1}
-            mv {params.path}/{wildcards.sample}_paired*_contam_2.fastq {output.host_fq2}
+            mv {params.path}/{wildcards.sample}_*paired*contam_1.fastq {output.host_fq1}
+            mv {params.path}/{wildcards.sample}_*paired*contam_2.fastq {output.host_fq2}
             rm -f {params.path}/*unmatched* 
         """
