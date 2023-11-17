@@ -7,8 +7,8 @@ if [ "$#" -eq "2" ];then
 #elif [ "$#" -eq "1" ];then
 #	prj_path=$1
   #	修改config.yaml中的root路径和db_root路径
-	sed -i '1s/.*$/root: '$1'/' $prj_path/workflow/config/config.yaml
-  sed -i '2s/.*$/db_root: '$2'/' $prj_path/workflow/config/config.yaml
+	sed -i "1c root: ${prj_path}" ${prj_path}/workflow/config/config.yaml
+  sed -i "2c db_root: ${db_path}" ${prj_path}/workflow/config/config.yaml
 else
 	echo "Usage: `basename $0` {prj_path(full path need)} {db_path(full path need)"
 	echo "You provided $# parameters,but 2 are required."
@@ -35,11 +35,11 @@ else
 ### 注意，EOF语句不允许前面有tab或空格，所以此处不缩进
 cat >> $HOME/.bashrc <<EOF
 # >>> conda initialize >>>
-if [ -f "~/mambaforge/etc/profile.d/conda.sh" ]; then
-    . "~/mambaforge/etc/profile.d/conda.sh"
+if [ -f ~/mambaforge/etc/profile.d/conda.sh ]; then
+    . ~/mambaforge/etc/profile.d/conda.sh
 fi
-if [ -f "~/mambaforge/etc/profile.d/mamba.sh" ]; then
-    . "~/mambaforge/etc/profile.d/mamba.sh"
+if [ -f ~/mambaforge/etc/profile.d/mamba.sh ]; then
+    . ~/mambaforge/etc/profile.d/mamba.sh
 fi
 # conda activate
 . ~/mambaforge/bin/activate
