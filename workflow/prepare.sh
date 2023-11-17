@@ -1,19 +1,18 @@
 # Desc: 设置工作路径和库路径，安装miniforge，配置conda源，安装snakemake
 
 #### Step 0. 设置工作路径和库路径 ####
-if [ "$#" -eq "2" ];then
-	prj_path=$1
-	db_path=$2
-#elif [ "$#" -eq "1" ];then
-#	prj_path=$1
-  #	修改config.yaml中的root路径和db_root路径
-	sed -i "1c root: ${prj_path}" ${prj_path}/workflow/config/config.yaml
-  sed -i "2c db_root: ${db_path}" ${prj_path}/workflow/config/config.yaml
-else
-	echo "Usage: `basename $0` {prj_path(full path need)} {db_path(full path need)"
-	echo "You provided $# parameters,but 2 are required."
-	exit 0
-fi
+# 获取prepare.sh脚本所在目录的父目录（项目目录）
+script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+prj_path=$(dirname "$script_dir")
+#	修改config.yaml中的root路径
+sed -i "1c root: ${prj_path}" ${prj_path}/workflow/config/config.yaml
+echo "设定root路径为: ${prj_path}"
+db_path=$HOME/database
+#	修改config.yaml中的db_root路径
+sed -i "2c db_root: ${db_path}" ${prj_path}/workflow/config/config.yaml
+echo "设定db_root路径为: ${db_path}"
+echo "如需修改项目路径和数据库路径，请修改${prj_path}/workflow/config/config.yaml文件“root”和“db_root”字段"
+
 
 ###### Step 1. 安装miniforge，配置conda源 ######
 # 检查Conda是否已安装
