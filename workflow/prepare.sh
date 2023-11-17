@@ -1,11 +1,12 @@
 # Desc: 设置工作路径和库路径，安装miniforge，配置conda源，安装snakemake
 
+#### Step 0. 设置工作路径和库路径 ####
 if [ "$#" -eq "2" ];then
 	prj_path=$1
-	host_db=$2
+	db_path=$2
 #elif [ "$#" -eq "1" ];then
 #	prj_path=$1
-  #	修改config.yaml中的prj_path路径
+  #	修改config.yaml中的root路径和db_root路径
 	sed -i '1s/.*$/root: '$1'/' $prj_path/workflow/config/config.yaml
   sed -i '2s/.*$/db_root: '$2'/' $prj_path/workflow/config/config.yaml
 else
