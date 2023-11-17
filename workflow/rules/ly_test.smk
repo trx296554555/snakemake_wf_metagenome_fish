@@ -7,7 +7,7 @@ def get_species(wildcards):
     print(res)
     return res
 
-
+1111
 # echo `which python`
 # echo `which bowtie2-build`
 rule build_index:
