@@ -3,7 +3,7 @@
 #### Step 0. 设置工作路径和库路径 ####
 # 获取prepare.sh脚本所在目录的父目录（项目目录）
 script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
-prj_path=$(dirname "$script_dir")
+prj_path=$(dirname `dirname "$script_dir"`)
 #	修改config.yaml中的root路径
 sed -i "1c root: ${prj_path}" ${prj_path}/workflow/config/config.yaml
 echo "设定root路径为: ${prj_path}"
