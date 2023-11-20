@@ -12,7 +12,7 @@ rule generate_kraken2_report:
     params:
         db=config["db_root"] + "/" + config["db"]["kraken2"]
     conda:
-        "kraken2"
+        config["root"] + "/" + config["envs"] + "/" + "kraken2.yaml"
     log:
         config["root"] + "/" + config["folder"]["kraken2"] + "/{sample}.log"
     shell:

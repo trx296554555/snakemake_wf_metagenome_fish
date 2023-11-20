@@ -17,7 +17,7 @@ rule build_index:
     log:
         config["root"] + "/" + config["folder"]["index"] + "/{species}_build_index.log"
     conda:
-        "kneaddata"
+        config["root"] + "/" + config["envs"] + "/" + "kneaddata.yaml"
     shell:
         """
         bowtie2-build --threads {threads} -f {input} {output} > {log} 2>&1
