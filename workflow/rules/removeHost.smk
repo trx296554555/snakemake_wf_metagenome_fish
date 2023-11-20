@@ -23,7 +23,8 @@ rule build_index:
         bowtie2-build --threads {threads} -f {input} {output} > {log} 2>&1
         """
 
-
+## TODO
+# remove_host shell中的缩进有点问题，项目完成后修改
 rule remove_host:
     input:
         fq1=config["root"] + "/" + config["folder"]["data"] + "/{sample}/{sample}_1.clean.fq.gz",
