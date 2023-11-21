@@ -18,10 +18,12 @@ include: "rules/readsAnnotation.smk"
 rule all:
     input:
         "logs/01_check_run.log",
-        expand(config["root"] + "/" + config["folder"]["kraken2"] + "/{sample}.kraken",sample=get_run_sample())
+        # expand(config["root"] + "/" + config["folder"]["kraken2"] + "/{sample}.kraken",sample=get_run_sample())
         # "/home/user002/fish/02_kraken2/Y0119P.kraken",
-        # "/home/user002/fish/02_kraken2/Y0894C.kraken",
-        # "/home/user002/fish/02_kraken2/Y0894P.kraken"
+        "/home/user002/fish/02_kraken2/Y0894C.kraken",
+        "/home/user002/fish/02_kraken2/Y0894P.kraken",
+        "/home/user002/fish/02_kraken2/Y0895C.kraken",
+        "/home/user002/fish/02_kraken2/Y0895P.kraken"
     message:
         """
         Start to run the pipeline. --------------------------------------------------

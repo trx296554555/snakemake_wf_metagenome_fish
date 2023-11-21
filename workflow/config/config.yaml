@@ -1,5 +1,5 @@
 root: /home/user002/fish
-db_root: /data/sas-2-15t/database
+db_root: /home/user002/database
 db:
     kraken2: kraken2_20230803_db
     humann_chocophlan: humann3_db/chocophlan-v31
@@ -13,3 +13,4 @@ folder:
     data: 00_cleandata
     rm_host: 01_remove_host
     kraken2: 02_kraken2
+reads_length: 150

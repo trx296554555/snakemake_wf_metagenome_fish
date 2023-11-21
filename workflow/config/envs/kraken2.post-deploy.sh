@@ -1,0 +1,2 @@
+echo $PWD > ~/test.txt
+

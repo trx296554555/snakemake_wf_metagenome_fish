@@ -33,12 +33,13 @@ git pull
 ```shell
 cd YOUR_WORK_PATH
 conda activate snakemake
+snakemake --use-conda --conda-create-envs-only
 snakemake -c96 --use-conda -np
 nohup snakemake -c96 --use-conda &
 ```
 
 ---
 # Note:
-- [kneaddata](https://github.com/biobakery/biobakery/wiki/kneaddata)去宿主，单个任务80线程耗时约120分钟，RAM内存不超过20G，磁盘空间临时占用不超过100G
+- [kneaddata](https://github.com/biobakery/biobakery/wiki/kneaddata)去宿主，单个任务12线程耗时约120分钟，RAM内存不超过20G，磁盘空间临时占用不超过100G
 - 
 bracken-build -d /data/sas-2-15t/database/kraken_20230803_db/ -t 48 -l 150

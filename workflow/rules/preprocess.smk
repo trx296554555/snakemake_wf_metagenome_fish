@@ -127,8 +127,11 @@ rule check_run:
             dir_name = os.path.basename(i).replace('_check_md5.log','')
             with open(i,'r') as f:
                 if 'FAILED' in f.read() or '失败' in f.read():
-                    shutil.move(os.path.join(config["root"],config["folder"]["data"],dir_name),
-                        os.path.join(config["root"],config["folder"]["data"],'md5_error_sample',dir_name))
+                    try:
+                        shutil.move(os.path.join(config["root"],config["folder"]["data"],dir_name),
+                            os.path.join(config["root"],config["folder"]["data"],'md5_error_sample',dir_name))
+                    except FileNotFoundError:
+                        print(f'Dir {dir_name} not found, maybe it has been moved.')
         un_exp_sample = os.listdir(os.path.join(config["root"],config["folder"]["data"],'unexpect_sample'))
         md5_err_sample = os.listdir(os.path.join(config["root"],config["folder"]["data"],'md5_error_sample'))
         with open('logs/01_check_run.log','w') as f:

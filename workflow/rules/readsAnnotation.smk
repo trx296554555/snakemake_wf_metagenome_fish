@@ -8,7 +8,7 @@ rule generate_kraken2_report:
     message:
         "05: Execute Kraken2 for assigning taxonomic labels to DNA sequences ------------------------------------------"
     threads:
-        12
+        24
     params:
         db=config["db_root"] + "/" + config["db"]["kraken2"]
     conda:
@@ -17,6 +17,6 @@ rule generate_kraken2_report:
         config["root"] + "/" + config["folder"]["kraken2"] + "/{sample}.log"
     shell:
         """
-        kraken2 --paired -db {params.db} --threads {threads} --memory-mapping \
+        kraken2 --paired -db {params.db} --threads {threads} \
         --report {output.kraken2_report} --out {output.kraken2_out} {input.fq1} {input.fq2} > {log} 2>&1
         """

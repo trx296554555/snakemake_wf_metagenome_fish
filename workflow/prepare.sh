@@ -72,6 +72,7 @@ custom_channels:
   simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
   deepmodeling: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/
 EOF
+conda clean -i
 
 # mamba安装snakemake
 # 指定要检测的环境名称
