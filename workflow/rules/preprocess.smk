@@ -126,7 +126,7 @@ rule check_run:
         for i in input.md5:
             dir_name = os.path.basename(i).replace('_check_md5.log','')
             with open(i,'r') as f:
-                if 'FAILED' in f.read():
+                if 'FAILED' in f.read() or '失败' in f.read():
                     shutil.move(os.path.join(config["root"],config["folder"]["data"],dir_name),
                         os.path.join(config["root"],config["folder"]["data"],'md5_error_sample',dir_name))
         un_exp_sample = os.listdir(os.path.join(config["root"],config["folder"]["data"],'unexpect_sample'))
@@ -139,4 +139,3 @@ rule check_run:
             f.write(f'Unexpected samples: {un_exp_sample}\n\n')
             f.write(f'MD5 error sample num: {len(md5_err_sample)}\n')
             f.write(f'MD5 error samples: {md5_err_sample}\n\n')
-
