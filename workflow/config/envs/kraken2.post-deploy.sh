@@ -20,7 +20,7 @@ if [ -d "${db_root}"/"${kraken2_db}" ];then
 else
   echo "The Kraken 2 database doesn't exist. Use the following command to build it yourself:" >> "${root_path}"/logs/env.log
   # 构建数据库，报错参考 https://github.com/DerrickWood/kraken2/issues/508
-  echo "conda activate ${env_name} && cd ${db_root} && kraken2-build --standard --threads 12 --db ${kraken2_db}" >> "${root_path}"/logs/env.log
+  echo "conda activate $CONDA_PREFIX && cd ${db_root} && kraken2-build --standard --threads 12 --db ${kraken2_db}" >> "${root_path}"/logs/env.log
 fi
 
 # Check if the bracken index already exists
@@ -29,7 +29,7 @@ if [ -f "${db_root}"/"${kraken2_db}"/database.kraken ];then
 else
   echo "The bracken index doesn't exist. Use the following command to build it yourself:" >> "${root_path}"/logs/env.log
   # Build bracken index
-  echo "conda activate ${env_name} && cd ${db_root} && bracken-build -d ${db_root}/${kraken2_db} -t 48 -l ${reads_length}" >> "${root_path}"/logs/env.log
+  echo "conda activate $CONDA_PREFIX && cd ${db_root} && bracken-build -d ${db_root}/${kraken2_db} -t 48 -l ${reads_length}" >> "${root_path}"/logs/env.log
 fi
 
 echo "---------------------------" >> "${root_path}"/logs/env.log
