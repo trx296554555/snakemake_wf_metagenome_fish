@@ -33,7 +33,7 @@ git pull
 ```shell
 cd YOUR_WORK_PATH
 conda activate snakemake
-snakemake --use-conda --conda-create-envs-only
+snakemake -c12 --use-conda --conda-create-envs-only
 snakemake -c96 --use-conda -np
 nohup snakemake -c96 --use-conda &
 ```

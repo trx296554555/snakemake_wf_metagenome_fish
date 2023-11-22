@@ -44,5 +44,5 @@ rule generate_bracken_report:
         sed -i '1i ------- kraken2 log --------' {params.final_log}
         bracken -d {params.db} -i {input.kraken2_report} -o {output.bracken_out} \
         -w {output.bracken_report} -r {params.reads_len} > {params.tmp_log} 2>&1
-        echo '------- bracken log --------' | cat - {params.tmp_log} >> {params.final_log} && rm {params.tmp_log}
+        echo '------- bracken log --------' | cat - {params.tmp_log} >> {params.final_log} && rm -f {params.tmp_log}
         """
