@@ -42,4 +42,3 @@ nohup snakemake -c96 --use-conda &
 # Note:
 - [kneaddata](https://github.com/biobakery/biobakery/wiki/kneaddata)去宿主，单个任务12线程耗时约120分钟，RAM内存不超过20G，磁盘空间临时占用不超过100G
 - 
-bracken-build -d /data/sas-2-15t/database/kraken_20230803_db/ -t 48 -l 150

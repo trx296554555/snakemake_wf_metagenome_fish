@@ -13,17 +13,12 @@ configfile: "workflow/config/config.yaml"
 #### include rules ####
 include: "rules/preprocess.smk"
 include: "rules/removeHost.smk"
-include: "rules/readsAnnotation.smk"
+include: "rules/readsClassify.smk"
 
 rule all:
     input:
         "logs/01_check_run.log",
-        # expand(config["root"] + "/" + config["folder"]["kraken2"] + "/{sample}.kraken",sample=get_run_sample())
-        # "/home/user002/fish/02_kraken2/Y0119P.kraken",
-        "/home/user002/fish/02_kraken2/Y0894C.kraken",
-        "/home/user002/fish/02_kraken2/Y0894P.kraken",
-        "/home/user002/fish/02_kraken2/Y0895C.kraken",
-        "/home/user002/fish/02_kraken2/Y0895P.kraken"
+        expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.braken",sample=get_run_sample())
     message:
         """
         Start to run the pipeline. --------------------------------------------------
