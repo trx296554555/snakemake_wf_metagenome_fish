@@ -13,4 +13,5 @@ folder:
     data: 00_cleandata
     rm_host: 01_remove_host
     reads_classify: 02_kraken2
+    mitogenome: 03_host_mitogenome
 reads_length: 150

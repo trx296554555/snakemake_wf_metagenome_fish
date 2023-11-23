@@ -14,11 +14,13 @@ configfile: "workflow/config/config.yaml"
 include: "rules/preprocess.smk"
 include: "rules/removeHost.smk"
 include: "rules/readsClassify.smk"
+include: "rules/getMitogenome.smk"
 
 rule all:
     input:
         "logs/01_check_run.log",
-        expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.braken",sample=get_run_sample())
+        expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.braken",sample=get_run_sample()),
+        expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{sample}/{sample}.result",sample=get_run_sample())
     message:
         """
         Start to run the pipeline. --------------------------------------------------
