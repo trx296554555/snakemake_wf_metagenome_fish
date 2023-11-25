@@ -56,6 +56,16 @@ def get_run_sample():
     return run_sample
 
 
+def get_run_individual():
+    run_sample = get_run_sample()
+    run_individual = []
+    for i in run_sample:
+        if (individual:=i.replace('C','').replace('P','')) in run_individual:
+            pass
+        else:
+            run_individual.append(individual)
+    return run_individual
+
 def check_run_sample():
     """
     检查样本与对应的参考基因组是否存在，只会处理sampleList.csv中存在的样本
