@@ -14,4 +14,5 @@ folder:
     rm_host: 01_remove_host
     reads_classify: 02_kraken2
     mitogenome: 03_host_mitogenome
+    humann: 04_humann3
 reads_length: 150
