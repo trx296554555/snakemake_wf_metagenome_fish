@@ -19,7 +19,7 @@ include: "rules/getMitogenome.smk"
 rule all:
     input:
         "logs/01_check_run.log",
-        expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.braken",sample=get_run_sample()),
+        config["root"] + "/" + config["folder"]["reads_classify"] + "/bracken_report.txt",
         expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result",individual=get_run_individual())
     message:
         """
