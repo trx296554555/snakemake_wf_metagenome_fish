@@ -6,6 +6,9 @@ env_name=$(basename $CONDA_PREFIX)
 metaphlan3_db_version="v30_CHOCOPhlAn_201901"
 echo "metaphlan3_db_version: ${metaphlan3_db_version}" >> "${root_path}"/logs/env.log
 echo $metaphlan3_db_version > "${CONDA_PREFIX}"/envs/humann3/lib/python3.1/site-packages/metaphlan/metaphlan_databases/mpa_latest
+# TODO
+# 检测是否已经下载了metaphlan3数据库，如果有，就不再下载，并软链到humann3的数据库目录下
+# 等待humann4发布后，再进行修改
 
 # Read the configuration
 db_root=$(awk -F ': ' '/db_root:/{print $2}' "${config_path}"/config.yaml)
