@@ -1,13 +1,22 @@
 root_path=$(dirname `dirname \`dirname "$CONDA_PREFIX"_\``)
 config_path="${root_path}"/workflow/config
 env_name=$(basename $CONDA_PREFIX)
+db_root=$(awk -F ': ' '/db_root:/{print $2}' "${config_path}"/config.yaml)
+mpa_db=$(awk -F ': ' '/metaphlan:/{print $2}' "${config_path}"/config.yaml)
 
 # Specify the version of the metaphlan3 database to match the version of humann3 (cannot use the latest version)
-metaphlan3_db_version="v30_CHOCOPhlAn_201901"
-echo "metaphlan3_db_version: ${metaphlan3_db_version}" >> "${root_path}"/logs/env.log
-echo $metaphlan3_db_version > "${CONDA_PREFIX}"/envs/humann3/lib/python3.1/site-packages/metaphlan/metaphlan_databases/mpa_latest
+mpa_db_version=$(cat "${db_root}"/"${mpa_db}"/mpa_latest)
+# 检查是否已经存在metaphlan3数据库
+if [ -d "${db_root}"/"${mpa_db}" ];then
+  echo "Metaphlan3 database already exists, location：${db_root}/${mpa_db}" >> "${root_path}"/logs/env.log
+  echo "metaphlan3_db_version: ${mpa_db_version}" >> "${root_path}"/logs/env.log
+else
+  echo "The Metaphlan3 database doesn't exist. Use the following command to build it yourself:" >> "${root_path}"/logs/env.log
+  # 构建数据库
+  echo "conda activate $CONDA_PREFIX && cd ${db_root} && metaphlan --install --nproc 50 --index ${metaphlan3_db_version} --bowtie2db ${mpa_db}" >> "${root_path}"/logs/env.log
+fi
+
 # TODO
-# 检测是否已经下载了metaphlan3数据库，如果有，就不再下载，并软链到humann3的数据库目录下
 # 等待humann4发布后，再进行修改
 
 # Read the configuration
