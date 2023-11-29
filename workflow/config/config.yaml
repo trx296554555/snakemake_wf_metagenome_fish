@@ -14,4 +14,9 @@ folder:
     rm_host: 01_remove_host
     reads_classify: 02_kraken2
     mitogenome: 03_host_mitogenome
+    reads_anno_humann3: 04_annotation/01_humann3
+    reads_anno_rgi: 04_annotation/02_rgi
+    reads_anno_dbcan: 04_annotation/03_dbcan
+    reads_anno_vfdb: 04_annotation/04_vfdb
+    assemble_contigs: 05_megahit
 reads_length: 150
