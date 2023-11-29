@@ -15,12 +15,14 @@ include: "rules/preprocess.smk"
 include: "rules/removeHost.smk"
 include: "rules/readsClassify.smk"
 include: "rules/getMitogenome.smk"
+include: "rules/assembleContig.smk"
 
 rule all:
     input:
         "logs/01_check_run.log",
-        expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.braken",sample=get_run_sample()),
-        expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result",individual=get_run_individual())
+        config["root"] + "/" + config["folder"]["reads_classify"] + "/bracken_report.txt",
+        expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result",individual=get_run_individual()),
+        expand(config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",sample=get_run_sample())
     message:
         """
         Start to run the pipeline. --------------------------------------------------
