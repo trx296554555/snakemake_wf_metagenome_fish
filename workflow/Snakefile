@@ -15,14 +15,19 @@ include: "rules/preprocess.smk"
 include: "rules/removeHost.smk"
 include: "rules/readsClassify.smk"
 include: "rules/getMitogenome.smk"
-include: "rules/assembleContig.smk"
+include: "rules/assembleContigs.smk"
+include: "rules/contigsBinning.smk"
 
 rule all:
     input:
-        "logs/01_check_run.log",
-        config["root"] + "/" + config["folder"]["reads_classify"] + "/bracken_report.txt",
-        expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result",individual=get_run_individual()),
-        expand(config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",sample=get_run_sample())
+        config["root"] + "/" + config["folder"]["logs"] + "/01_check_run.log",
+        config["root"] + "/" + config["folder"]["reports"] + "/01_rm_host.report",
+        config["root"] + "/" + config["folder"]["reports"] + "/02_reads_classify.report",
+        config["root"] + "/" + config["folder"]["reports"] + "/03_get_mitogenome.report",
+        expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins", sample=get_run_sample()),
+        expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_bins", sample=get_run_sample()),
+        expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins", sample=get_run_sample()),
+        # expand(config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",sample=get_run_sample())
     message:
         """
         Start to run the pipeline. --------------------------------------------------

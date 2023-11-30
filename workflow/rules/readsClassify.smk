@@ -53,11 +53,12 @@ rule generate_bracken_report:
         python {params.bracken2trx} -r {output.bracken_report} -o {output.trx_report}
         """
 
-rule merge_bracken_report:
+
+rule merge_bracken_res:
     input:
-        bracken_res=expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.trx", sample=get_run_sample())
+        bracken_res=expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.trx", sample=get_run_sample()),
     output:
-        merge_bracken=config["root"] + "/" + config["folder"]["reads_classify"] + "/bracken_report.txt"
+        merge_bracken=config["root"] + "/" + config["folder"]["reads_classify"] + "/all_bracken_res.tsv",
     message:
         "07: Merge Bracken reports ----------------------------------------------------------------------------------"
     run:
@@ -74,3 +75,29 @@ rule merge_bracken_report:
         merged_df = merged_df.reset_index()
         merged_df = merged_df.sort_values(by=['Taxon'])
         merged_df.to_csv(output.merge_bracken, sep='\t', index=False)
+
+
+rule report_reads_classify:
+    input:
+        kraken2_report=expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.kraken", sample=get_run_sample()),
+    output:
+        reads_classify_report=config["root"] + "/" + config["folder"]["reports"] + "/02_reads_classify.report"
+    run:
+        report_list = ['Eukaryota', 'Bacteria', 'Viruses', 'Archaea', 'unclassified', 'Homo sapiens']
+        res_dict = {}
+        for k_file in input.kraken2_report:
+            sample = os.path.basename(k_file).split('.')[0]
+            res_dict[sample] = {}
+            with open(k_file ,'r') as ipt:
+                for line in ipt:
+                    line = line.strip().split('\t')
+                    counts = line[1]
+                    taxon = line[-1].strip()
+                    if taxon in report_list:
+                        res_dict[sample][taxon] = counts
+        table = pd.DataFrame(res_dict).transpose().astype(int)
+        table['unclassified(%)'] = table['unclassified'].div(table.sum(axis=1)).multiply(100)
+        table['human(%)'] = table['Homo sapiens'].div(table.sum(axis=1)).multiply(100)
+        table['known_microbiome(%)'] = 100 - table['unclassified(%)'] - table['human(%)']
+        table = table.sort_index()
+        table.to_csv(output.reads_classify_report, sep="\t")

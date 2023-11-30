@@ -1,4 +1,8 @@
 import os
+import re
+import subprocess
+import pandas as pd
+
 # # If the reference genome contains MT sequence, can use only host reads
 # rule get_mitogenome:
 #     input:
@@ -114,3 +118,41 @@ rule get_mitogenome:
             rm -rf {output.res_dir}/{wildcards.individual}.{wildcards.individual}.megahit.mitogenome.fa.result
         fi
         """
+
+rule report_get_mitogenome:
+    input:
+        res_dir=expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result", individual=get_run_individual()),
+    output:
+        get_mitogenome_report=config["root"] + "/" + config["folder"]["reports"] + "/03_get_mitogenome.report"
+    run:
+        res_dict = {}
+        for m_dir in input.res_dir:
+            sample = os.path.basename(m_dir).split(".")[0]
+            res_dict[sample] = {}
+            if os.path.exists(os.path.join(os.path.dirname(m_dir), "task_failed.error")):
+                res_dict[sample]["Status"] = "Failed"
+            else:
+                res_dict[sample]["Status"] = "Success"
+                depth_file = os.path.join(m_dir, "circos.depth.txt")
+                command = "awk '{sum += $NF} END {print sum/NR}' " + depth_file
+                avg_depth = subprocess.check_output(command, shell=True, executable="/bin/bash", text=True)
+                res_dict[sample]["Average_depth"] = float(avg_depth.strip())
+                with open(os.path.join(m_dir, 'summary.txt'), 'r') as ipt:
+                    next(ipt)
+                    info = re.split(r'\s\s+', next(ipt).strip())
+                    res_dict[sample]["Seq_id"] = info[0]
+                    res_dict[sample]["Length(bp)"] = info[1]
+                    res_dict[sample]["Circularity"] = info[2]
+                    res_dict[sample]["Closely_related_species"] = info[3]
+                    for line in ipt:
+                        if line.startswith("Protein coding genes totally found"):
+                            res_dict[sample]["CDS"] = line.strip().split(":")[1].strip()
+                        elif line.startswith("tRNA genes totally found"):
+                            res_dict[sample]["tRNA"] = line.strip().split(":")[1].strip()
+                        elif line.startswith("rRNA genes totally found"):
+                            res_dict[sample]["rRNA"] = line.strip().split(":")[1].strip()
+                        else:
+                            continue
+        table = pd.DataFrame(res_dict).T
+        table = table.sort_index()
+        table.to_csv(output.get_mitogenome_report, sep="\t", index=True, header=True)

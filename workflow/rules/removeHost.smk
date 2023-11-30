@@ -63,3 +63,16 @@ rule remove_host:
             mv {params.path}/{wildcards.sample}_*paired*contam_2.fastq {output.host_fq2}
             rm -f {params.path}/*unmatched* 
         """
+
+
+rule report_rm_host:
+    input:
+        expand(config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/kneaddata.log", sample=get_run_sample())
+    output:
+        config["root"] + "/" + config["folder"]["reports"] + "/01_rm_host.report"
+    params:
+        script=config["root"] + "/" + config["scripts"] + "/statistics_kneaddata_res.py"
+    shell:
+        """
+        python {params.script} {input} {output}
+        """

@@ -5,10 +5,14 @@ db:
     humann_chocophlan: humann3_db/chocophlan-v31
     humann_uniref: humann3_db/uniref
     humann_utility_mapping: humann3_db/utility_mapping
+    metaphlan: metaphlan_databases
 envs: workflow/config/envs
+scripts: workflow/scripts
 meta:
     sampleList: workflow/config/sampleList.csv
 folder:
+    logs: logs
+    reports: reports
     index: ref_db
     data: 00_cleandata
     rm_host: 01_remove_host
@@ -19,4 +23,5 @@ folder:
     reads_anno_dbcan: 04_annotation/03_dbcan
     reads_anno_vfdb: 04_annotation/04_vfdb
     assemble_contigs: 05_megahit
+    contigs_binning: 06_binning
 reads_length: 150

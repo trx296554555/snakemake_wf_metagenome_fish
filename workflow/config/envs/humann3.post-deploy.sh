@@ -8,12 +8,13 @@ mpa_db=$(awk -F ': ' '/metaphlan:/{print $2}' "${config_path}"/config.yaml)
 mpa_db_version=$(cat "${db_root}"/"${mpa_db}"/mpa_latest)
 # 检查是否已经存在metaphlan3数据库
 if [ -d "${db_root}"/"${mpa_db}" ];then
+  ln -s "${db_root}"/"${mpa_db}" "${CONDA_PREFIX}"/lib/python3.1/site-packages/metaphlan/metaphlan_databases
   echo "Metaphlan3 database already exists, location：${db_root}/${mpa_db}" >> "${root_path}"/logs/env.log
   echo "metaphlan3_db_version: ${mpa_db_version}" >> "${root_path}"/logs/env.log
 else
   echo "The Metaphlan3 database doesn't exist. Use the following command to build it yourself:" >> "${root_path}"/logs/env.log
   # 构建数据库
-  echo "conda activate $CONDA_PREFIX && cd ${db_root} && metaphlan --install --nproc 50 --index ${metaphlan3_db_version} --bowtie2db ${mpa_db}" >> "${root_path}"/logs/env.log
+  echo "conda activate $CONDA_PREFIX && cd ${db_root} && metaphlan --install --nproc 50 --index ${mpa_db_version} --bowtie2db ${mpa_db}" >> "${root_path}"/logs/env.log
 fi
 
 # TODO
