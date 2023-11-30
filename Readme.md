@@ -40,7 +40,7 @@ nohup snakemake -c96 --use-conda &
 
 ---
 # Note:
-- [kneaddata](https://github.com/biobakery/biobakery/wiki/kneaddata)去宿主，单个任务12线程耗时约120分钟，RAM内存不超过20G，磁盘空间临时占用不超过100G
-- [kraken2](https://github.com/DerrickWood/kraken2/wiki/Manual)分类，单个任务24线程耗时约1分钟，RAM内存不超过80G，磁盘空间临时占用不超过10G
-- [bracken](https://github.com/jenniferlu717/Bracken)对kraken2结果进行校正，单个任务1线程耗时约0.1分钟，RAM内存不超过1G，磁盘空间临时占用不超过1G
-- [mitoZ](https://github.com/linzhi2013/MitoZ/wiki)从动物肠道提取的宏基因组不可避免的含有大量宿主的基因组序列，使用mitoZ从中提取出宿主的线粒体基因组序列，单个任务24线程耗时约10分钟，RAM内存不超过10G，磁盘空间临时占用不超过10G
+- [kneaddata v0.12.0](https://github.com/biobakery/biobakery/wiki/kneaddata)去宿主，单个任务12线程耗时约120分钟，RAM内存不超过20G，磁盘空间临时占用不超过100G
+- [kraken2 v2.1.3](https://github.com/DerrickWood/kraken2/wiki/Manual)分类，单个任务24线程耗时约1分钟，RAM内存不超过80G，磁盘空间临时占用不超过10G
+- [bracken v2.9](https://github.com/jenniferlu717/Bracken)对kraken2结果进行校正，单个任务1线程耗时约0.1分钟，RAM内存不超过1G，磁盘空间临时占用不超过1G
+- [mitoZ v3.6](https://github.com/linzhi2013/MitoZ/wiki)从动物肠道提取的宏基因组不可避免的含有大量宿主的基因组序列，使用mitoZ从中提取出宿主的线粒体基因组序列，单个任务24线程耗时约10分钟，RAM内存不超过10G，磁盘空间临时占用不超过10G

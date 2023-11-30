@@ -93,7 +93,7 @@ rule get_mitogenome:
         assembly=directory(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/mt_assembly"),
         res_dir=directory(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result")
     message:
-        "07: Use mitoZ to obtain the mitochondrial genome of the host from the host sequence ------------------------------------------"
+        "08: Use mitoZ to obtain the mitochondrial genome of the host from the host sequence ------------------------------------------"
     threads:
         24
     params:

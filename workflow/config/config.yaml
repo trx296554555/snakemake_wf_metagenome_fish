@@ -18,10 +18,11 @@ folder:
     rm_host: 01_remove_host
     reads_classify: 02_kraken2
     mitogenome: 03_host_mitogenome
-    reads_anno_humann3: 04_annotation/01_humann3
-    reads_anno_rgi: 04_annotation/02_rgi
-    reads_anno_dbcan: 04_annotation/03_dbcan
-    reads_anno_vfdb: 04_annotation/04_vfdb
-    assemble_contigs: 05_megahit
-    contigs_binning: 06_binning
+    assemble_contigs: 04_megahit
+    predict_genes: 05_prodigal
+    reads_anno_humann3: 06_annotation/01_humann3
+    reads_anno_rgi: 06_annotation/02_rgi
+    reads_anno_dbcan: 06_annotation/03_dbcan
+    reads_anno_vfdb: 06_annotation/04_vfdb
+    contigs_binning: 07_binning
 reads_length: 150

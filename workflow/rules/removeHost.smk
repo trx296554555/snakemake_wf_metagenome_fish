@@ -24,7 +24,7 @@ rule build_index:
         """
 
 ## TODO
-# remove_host shell中的缩进有点问题，项目完成后修改
+# remove_host shell中的缩进有点问题，项目完成后修改, 上面建索引要加入到下面依赖中
 rule remove_host:
     input:
         fq1=config["root"] + "/" + config["folder"]["data"] + "/{sample}/{sample}_1.clean.fq.gz",
