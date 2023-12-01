@@ -23,7 +23,8 @@ rule assemble_contigs:
         megahit -1 {input.fq1} -2 {input.fq2} -m 0.95 --min-contig-len 300 \
         --k-list 79,99,119,139 -t {threads} \
         --out-dir {params.opt} --out-prefix {wildcards.sample} > {log} 2>&1
-        mv {params.opt}/{wildcards.sample}.contigs.fa {output.contigs}
+        # rename contigs, replace space with underscore
+        sed 's/ /_/g' {params.opt}/{wildcards.sample}.contigs.fa > {output.contigs}
         """
 
 

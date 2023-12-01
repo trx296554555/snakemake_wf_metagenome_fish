@@ -19,10 +19,15 @@ folder:
     reads_classify: 02_kraken2
     mitogenome: 03_host_mitogenome
     assemble_contigs: 04_megahit
-    predict_genes: 05_prodigal
-    reads_anno_humann3: 06_annotation/01_humann3
-    reads_anno_rgi: 06_annotation/02_rgi
-    reads_anno_dbcan: 06_annotation/03_dbcan
-    reads_anno_vfdb: 06_annotation/04_vfdb
+    gene_prediction: 05_prodigal
+    reads_anno_humann3: 06_reads_annotation/00_humann3
+    reads_anno_rgi: 06_reads_annotation/01_rgi
+    reads_anno_dbcan: 06_reads_annotation/02_dbcan
+    reads_anno_vfdb: 06_reads_annotation/03_vfdb
     contigs_binning: 07_binning
+    bin_refine: 08_bin_refine
+    bin_quantify: 09_bin_quantify
+    bin_anno_rgi: 10_bin_annotation/01_rgi
+    bin_anno_dbcan: 10_bin_annotation/02_dbcan
+    bin_anno_vfdb: 10_bin_annotation/03_vfdb
 reads_length: 150
