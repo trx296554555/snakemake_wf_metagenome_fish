@@ -1,5 +1,6 @@
 # 鱼类宏基因组分析流程 workflow by snakemake
 ---
+
 ## Prepare Data and Database
 
 ```shell
@@ -39,13 +40,19 @@ nohup snakemake -c96 --use-conda &
 ```
 
 ---
-# Note:
-- [kneaddata v0.12.0](https://github.com/biobakery/biobakery/wiki/kneaddata)去宿主，单个任务12线程耗时约120分钟，RAM内存不超过20G，磁盘空间临时占用不超过100G
-- [kraken2 v2.1.3](https://github.com/DerrickWood/kraken2/wiki/Manual)分类，单个任务24线程耗时约1分钟，RAM内存不超过80G，磁盘空间临时占用不超过10G
-- [bracken v2.9](https://github.com/jenniferlu717/Bracken)对kraken2结果进行校正，单个任务1线程耗时约0.1分钟，RAM内存不超过1G，磁盘空间临时占用不超过1G
-- [mitoZ v3.6](https://github.com/linzhi2013/MitoZ/wiki)从动物肠道提取的宏基因组不可避免的含有大量宿主的基因组序列，使用mitoZ从中提取出宿主的线粒体基因组序列，单个任务24线程耗时约10分钟，RAM内存不超过10G，磁盘空间临时占用不超过10G
-- [megahit v 1.2.9](https://github.com/voutcn/megahit/wiki)将来自微生物群体的DNA片段组装成contigs,单个任务24线程耗时约30分钟，RAM内存不超过10G，磁盘空间临时占用不超过10G
-- [prodigal v2.6.3](https://github.com/hyattpd/Prodigal/wiki)预测contigs的基因，单个任务1线程耗时约10分钟，RAM内存不超过1G，磁盘空间临时占用不超过1G
+
+| Software                                                                              | Version | Description | Core | Ram  | Disk  | Time    |
+|---------------------------------------------------------------------------------------|---------|-------------|------|------|-------|---------|
+| [kneaddata](https://github.com/biobakery/biobakery/wiki/kneaddata)                    | v0.12.0 | 去宿主         | 12   | <20G | <100G | ≈120min |
+| [kraken2](https://github.com/DerrickWood/kraken2/wiki/Manual)                         | v2.1.3  | 分类          | 24   | <80G | <10G  | ≈1min   |
+| [krakenTools](https://github.com/jenniferlu717/KrakenTools)                           | v1.2    | 下游分析        | 1    | <1G  | <1G   | ≈1min   |
+| [bracken](https://github.com/jenniferlu717/Bracken)                                   | v2.9    | 校正          | 1    | <1G  | <1G   | ≈0.1min |
+| [mitoZ ](https://github.com/linzhi2013/MitoZ/wiki)                                    | v3.6    | 提取宿主线粒体基因组  | 24   | <10G | <10G  | ≈10min  |
+| [megahit](https://github.com/voutcn/megahit/wiki)                                     | v1.2.9  | 组装          | 24   | <10G | <10G  | ≈30min  |
+| [prodigal](https://github.com/hyattpd/Prodigal/wiki)                                  | v2.6.3  | 预测基因        | 12   | <1G  | <1G   | ≈10min  |
+| [metabat2](https://bitbucket.org/berkeleylab/metabat/wiki/Best%20Binning%20Practices) | v2.15   | binning     | 12   | <20G | <1G   | ≈10min  |
+| [CONCOCT](https://github.com/BinPro/CONCOCT)                                          | v1.1.0  | binning     | 12   | <1G  | <1G   | ≈1min   |
+| [maxbin2](https://sourceforge.net/p/maxbin/code/ci/master/tree/)                      | v2.2.7  | binning     | 12   | <1G  | <1G   | ≈1min   |
 
 
 # 文件和目录是名词+动词的形式，如：readsClassify

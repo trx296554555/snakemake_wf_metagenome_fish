@@ -7,8 +7,9 @@ rule predict_coding_genes:
     message:
         "10: Predict protein coding genes using prodigal -------------------------"
     threads:
-        1
+        12
     params:
+        tmp=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/tmp",
         gff=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.gff",
         stats=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.stats",
     conda:
@@ -17,6 +18,13 @@ rule predict_coding_genes:
         config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.log"
     shell:
         """
-        prodigal -i {input.contigs} -d {output.genes} -a {output.proteins} \
-        -f gff -o {params.gff} -s {params.stats} -p meta > {log} 2>&1
+        mkdir -p {params.tmp}
+        seqkit split -p {threads} {input.contigs} -O {params.tmp}
+        for i in {params.tmp}/*.fa; do
+            prodigal -i $i -d $i.genes -a $i.proteins -p meta -m -q > /dev/null 2>&1 &
+        done
+        wait
+        cat {params.tmp}/*.genes > {output.genes}
+        cat {params.tmp}/*.proteins > {output.proteins}
+        rm -rf {params.tmp}
         """

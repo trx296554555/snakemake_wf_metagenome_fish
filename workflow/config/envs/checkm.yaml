@@ -87,6 +87,7 @@ dependencies:
   - python_abi=3.10=2_cp310
   - qt-main=5.15.2=h53bd1ea_10
   - readline=8.2=h5eee18b_0
+  - seqkit=2.6.1=h9ee0642_0
   - setuptools=68.0.0=py310h06a4308_0
   - sip=6.7.12=py310h6a678d5_0
   - six=1.16.0=pyhd3eb1b0_1
