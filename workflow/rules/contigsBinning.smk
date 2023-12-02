@@ -4,6 +4,7 @@ rule index_and_alignment:
         fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
         fq2=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq"
     output:
+        index=temp(directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}_contig_index")),
         sam=temp(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.sam"),
         bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
         depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.depth",
@@ -12,23 +13,22 @@ rule index_and_alignment:
         "13: Indexing and alignment of contigs to reads --------------------------"
     threads:
         24
-    params:
-        index=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}_contig_index/{sample}",
     conda:
         config["root"] + "/" + config["envs"] + "/" + "binning.yaml"
     log:
-        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/index_and_alignment.log"
+        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/mapping.log"
     shell:
         """
-        mkdir -p `dirname {params.index}`
-        bowtie2-build -f {input.contigs} {params.index} --threads {threads} --offrate 1 > {log} 2>&1
-        bowtie2 -x {params.index} -1 {input.fq1} -2 {input.fq2} -S {output.sam} --threads {threads} >> {log} 2>&1
+        mkdir -p {output.index}
+        bowtie2-build -f {input.contigs} {output.index}/{wildcards.sample} --threads {threads} --offrate 1 > /dev/null 2>&1
+        bowtie2 -x {output.index}/{wildcards.sample} -1 {input.fq1} -2 {input.fq2} -S {output.sam} --threads {threads} > {log} 2>&1
         samtools view -bS -@ {threads} {output.sam} -o {output.bam} 2>&1
         samtools sort -@ {threads} {output.bam} -o {output.bam} 2>&1
         samtools index {output.bam} 2>&1
         jgi_summarize_bam_contig_depths --outputDepth {output.depth} {output.bam} >> {log} 2>&1
         awk -v filename={wildcards.sample} 'BEGIN {{OFS="\t"; print "contig", "cov_mean_sample_" filename}} NR>1 {{print $1, $3 + $4}}' {output.depth} > {output.coverage}
         """
+
 
 rule binning_metabat2:
     input:
@@ -46,8 +46,9 @@ rule binning_metabat2:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2.log"
     shell:
         """
-        metabat2 -m 1500 -i {input.contigs} -a {input.depth} -o {output.bins}/{wildcards.sample}_metabat2 -t {threads} >> {log} 2>&1
+        metabat2 -m 1500 -i {input.contigs} -a {input.depth} -o {output.bins}/{wildcards.sample}_metabat2 -t {threads} -v > {log} 2>&1
         """
+
 
 rule binning_concoct:
     input:
@@ -57,11 +58,11 @@ rule binning_concoct:
         opt=temp(directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_opt")),
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_bins"),
     message:
-        "14: Binning with concoct --------------------------"
+        "14: Binning using concoct --------------------------"
     threads:
         12
     conda:
-        config["root"] + "/" + config["envs"] + "/" + "binning.yaml"
+        config["root"] + "/" + config["envs"] + "/" + "concoct.yaml"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct.log"
     shell:
@@ -83,7 +84,7 @@ rule binning_maxbin2:
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins"),
     message:
-        "14: Binning with maxbin2 --------------------------"
+        "14: Binning using maxbin2 --------------------------"
     threads:
         12
     conda:
@@ -106,19 +107,19 @@ rule refine_bins_DAS_tool:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.faa",
         maxbin2_bins=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins"
     output:
-        bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/merged_bins")
+        bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/merged_das_bins")
     message:
-        "15: Merging bins --------------------------"
+        "15: Refine bins using DAS tool --------------------------"
     threads:
-        24
+        12
     conda:
-        config["root"] + "/" + config["envs"] + "/" + "binning.yaml"
+        config["root"] + "/" + config["envs"] + "/" + "dastool.yaml"
     params:
         metabat2_c2b=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_contigs2bin.tsv",
         concoct_c2b=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_contigs2bin.tsv",
         maxbin2_c2b=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_contigs2bin.tsv"
     log:
-        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/merge_bins.log"
+        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/merged_das_bins.log"
     shell:
         """
         Fasta_to_Contig2Bin.sh -e fasta -i {input.maxbin2_bins} > {params.maxbin2_c2b}
@@ -131,30 +132,27 @@ rule refine_bins_DAS_tool:
         """
 
 
-# # bash ln -s $CONDA_PREFIX/bin/scripts/* $CONDA_PREFIX/bin/
-# rule metabinner:
-#     input:
-#         bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
-#         contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa"
-#     output:
-#         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_bins")
-#     message:
-#         "003: Binning with metabinner --------------------------"
-#     threads:
-#         12
-#     conda:
-#         config["root"] + "/" + config["envs"] + "/" + "metabinner.yaml"
-#     params:
-#         depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.metabinner.depth.txt"
-#     log:
-#         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner.log"
-#     shell:
-#         """
-#         mkdir -p {output.bins}
-#         jgi_summarize_bam_contig_depths --outputDepth {params.depth} {input.bam} > {log} 2>&1
-#         cat {params.depth} | awk '{{if ($2>1000) print $0 }}' |cut -f -1,4 > {params.depth}.gt1000
-#         gen_kmer.py {input.contigs} 1000 4
-#         Filter_tooshort.py {input.contigs} 1000
-#         run_metabinner.sh -a {input.contigs} -o {output.bins} -d {params.depth}.gt1000 \
-#         -k `dirname {input.contigs}`*.contigs_kmer_4_f1000.csv -t {threads} -p $CONDA_PREFIX/bin  > {log} 2>&1
-#         """
+rule metabinner:
+    input:
+        bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
+        depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.depth",
+    output:
+        bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_bins")
+    message:
+        "15: Refine bins using metabinner.yaml --------------------------"
+    threads:
+        12
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "metabinner.yaml.yaml"
+    log:
+        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner.log"
+    shell:
+        """
+        mkdir -p {output.bins}
+        awk '{{if ($2>1000) print $0 }}' {input.depth} |cut -f -1,4 > {input.depth}.gt1000
+        gen_kmer.py {input.contigs} 1000 4 
+        Filter_tooshort.py {input.contigs} 1000
+        run_metabinner.sh -a {input.contigs} -o {output.bins} -d {params.depth}.gt1000 \
+        -k `dirname {input.contigs}`*.contigs_kmer_4_f1000.csv -t {threads} -p $CONDA_PREFIX/bin  > {log} 2>&1
+        """
