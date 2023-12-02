@@ -7,14 +7,12 @@ rule index_and_alignment:
         index=temp(directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}_contig_index")),
         sam=temp(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.sam"),
         bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
-        depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.depth",
-        coverage=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.coverage"
     message:
         "13: Indexing and alignment of contigs to reads --------------------------"
     threads:
         24
     conda:
-        config["root"] + "/" + config["envs"] + "/" + "binning.yaml"
+        config["root"] + "/" + config["envs"] + "/" + "XXX.yaml"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/mapping.log"
     shell:
@@ -25,7 +23,25 @@ rule index_and_alignment:
         samtools view -bS -@ {threads} {output.sam} -o {output.bam} 2>&1
         samtools sort -@ {threads} {output.bam} -o {output.bam} 2>&1
         samtools index {output.bam} 2>&1
-        jgi_summarize_bam_contig_depths --outputDepth {output.depth} {output.bam} >> {log} 2>&1
+        """
+
+rule generate_coverage:
+    input:
+        bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
+    output:
+        depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.depth",
+        coverage=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.coverage"
+    message:
+        "14: Generate coverage --------------------------"
+    threads:
+        1
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "binning.yaml"
+    log:
+        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/mapping.log"
+    shell:
+        """
+        jgi_summarize_bam_contig_depths --outputDepth {output.depth} {input.bam} >> {log} 2>&1
         awk -v filename={wildcards.sample} 'BEGIN {{OFS="\t"; print "contig", "cov_mean_sample_" filename}} NR>1 {{print $1, $3 + $4}}' {output.depth} > {output.coverage}
         """
 
@@ -37,7 +53,7 @@ rule binning_metabat2:
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins")
     message:
-        "14: Binning with metabat2 --------------------------"
+        "15: Binning with metabat2 --------------------------"
     threads:
         12
     conda:
@@ -58,7 +74,7 @@ rule binning_concoct:
         opt=temp(directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_opt")),
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_bins"),
     message:
-        "14: Binning using concoct --------------------------"
+        "15: Binning using concoct --------------------------"
     threads:
         12
     conda:
@@ -84,7 +100,7 @@ rule binning_maxbin2:
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins"),
     message:
-        "14: Binning using maxbin2 --------------------------"
+        "15: Binning using maxbin2 --------------------------"
     threads:
         12
     conda:
@@ -109,7 +125,7 @@ rule refine_bins_DAS_tool:
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/merged_das_bins")
     message:
-        "15: Refine bins using DAS tool --------------------------"
+        "16: Refine bins using DAS tool --------------------------"
     threads:
         12
     conda:
