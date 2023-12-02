@@ -27,9 +27,9 @@ rule all:
         # config["root"] + "/" + config["folder"]["reports"] + "/02_reads_classify.report",
         # config["root"] + "/" + config["folder"]["reports"] + "/03_get_mitogenome.report",
         config["root"] + "/" + config["folder"]["reports"] + "/05_assemble_contigs.report",
-        # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins", sample=get_run_sample()),
+        expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins", sample=get_run_sample()),
         expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_bins", sample=get_run_sample()),
-        # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins", sample=get_run_sample()),
+        expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins", sample=get_run_sample()),
         # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/merged_bins", sample=get_run_sample()),
     message:
         """

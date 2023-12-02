@@ -51,7 +51,7 @@ nohup snakemake -c96 --use-conda &
 | [megahit](https://github.com/voutcn/megahit/wiki)                                     | v1.2.9  | 组装          | 24   | <10G | <10G  | ≈30min  |
 | [prodigal](https://github.com/hyattpd/Prodigal/wiki)                                  | v2.6.3  | 预测基因        | 12   | <1G  | <1G   | ≈10min  |
 | [metabat2](https://bitbucket.org/berkeleylab/metabat/wiki/Best%20Binning%20Practices) | v2.15   | binning     | 12   | <20G | <1G   | ≈10min  |
-| [CONCOCT](https://github.com/BinPro/CONCOCT)                                          | v1.1.0  | binning     | 12   | <1G  | <1G   | ≈1min   |
+| [CONCOCT](https://github.com/BinPro/CONCOCT)                                          | v1.1.0  | binning     | 12   | <1G  | <1G   | ≈30min  |
 | [maxbin2](https://sourceforge.net/p/maxbin/code/ci/master/tree/)                      | v2.2.7  | binning     | 12   | <1G  | <1G   | ≈1min   |
 
 

@@ -12,7 +12,7 @@ rule index_and_alignment:
     threads:
         24
     conda:
-        config["root"] + "/" + config["envs"] + "/" + "XXX.yaml"
+        config["root"] + "/" + config["envs"] + "/" + "tools.yaml"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/mapping.log"
     shell:
