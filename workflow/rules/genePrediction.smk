@@ -19,7 +19,7 @@ rule predict_coding_genes:
     shell:
         """
         mkdir -p {params.tmp}
-        seqkit split -p {threads} {input.contigs} -O {params.tmp}
+        seqkit split -p {threads} {input.contigs} -O {params.tmp} > /dev/null 2>&1
         for i in {params.tmp}/*.fa; do
             prodigal -i $i -d $i.genes -a $i.proteins -p meta -m -q > /dev/null 2>&1 &
         done
@@ -27,4 +27,5 @@ rule predict_coding_genes:
         cat {params.tmp}/*.genes > {output.genes}
         cat {params.tmp}/*.proteins > {output.proteins}
         rm -rf {params.tmp}
+        seqkit stats -T {output.proteins} > {log}
         """

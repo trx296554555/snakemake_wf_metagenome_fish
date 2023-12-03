@@ -123,7 +123,7 @@ rule refine_bins_DAS_tool:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.faa",
         maxbin2_bins=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins"
     output:
-        bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/merged_das_bins")
+        bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/das_merged_bins")
     message:
         "16: Refine bins using DAS tool --------------------------"
     threads:
@@ -135,12 +135,12 @@ rule refine_bins_DAS_tool:
         concoct_c2b=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_contigs2bin.tsv",
         maxbin2_c2b=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_contigs2bin.tsv"
     log:
-        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/merged_das_bins.log"
+        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/das_merged_bins.log"
     shell:
         """
-        Fasta_to_Contig2Bin.sh -e fasta -i {input.maxbin2_bins} > {params.maxbin2_c2b}
-        Fasta_to_Contig2Bin.sh -e fa -i {input.metabat2_bins} > {params.metabat2_c2b}
-        Fasta_to_Contig2Bin.sh -e fa -i {input.concoct_bins} > {params.concoct_c2b}
+        Fasta_to_Contig2Bin.sh -e fa -i {input.metabat2_bins} > {params.metabat2_c2b} 2>&1
+        Fasta_to_Contig2Bin.sh -e fa -i {input.concoct_bins} > {params.concoct_c2b} 2>&1 
+        Fasta_to_Contig2Bin.sh -e fasta -i {input.maxbin2_bins} > {params.maxbin2_c2b} 2>&1
         mkdir -p {output.bins}
         DAS_Tool -i {params.metabat2_c2b},{params.concoct_c2b},{params.maxbin2_c2b} -l metabat2,concoct,maxbin2 \
         -c {input.contigs} -o {output.bins}/{wildcards.sample}.contigs.fa -t {threads} \
@@ -156,19 +156,19 @@ rule metabinner:
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_bins")
     message:
-        "15: Refine bins using metabinner.yaml --------------------------"
+        "15: Binning using metabinner --------------------------"
     threads:
         12
     conda:
-        config["root"] + "/" + config["envs"] + "/" + "metabinner.yaml.yaml"
+        config["root"] + "/" + config["envs"] + "/" + "metabinner.yaml"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner.log"
     shell:
         """
         mkdir -p {output.bins}
         awk '{{if ($2>1000) print $0 }}' {input.depth} |cut -f -1,4 > {input.depth}.gt1000
-        gen_kmer.py {input.contigs} 1000 4 
-        Filter_tooshort.py {input.contigs} 1000
-        run_metabinner.sh -a {input.contigs} -o {output.bins} -d {params.depth}.gt1000 \
+        python $CONDA_PREFIX/bin/scripts/gen_kmer.py {input.contigs} 1000 4 
+        python $CONDA_PREFIX/bin/scripts/Filter_tooshort.py {input.contigs} 1000
+        run_metabinner.sh -a {input.contigs} -o {output.bins} -d {input.depth}.gt1000 \
         -k `dirname {input.contigs}`*.contigs_kmer_4_f1000.csv -t {threads} -p $CONDA_PREFIX/bin  > {log} 2>&1
         """

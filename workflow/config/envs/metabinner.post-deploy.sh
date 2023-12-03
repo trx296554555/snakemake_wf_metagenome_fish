@@ -7,7 +7,7 @@ env_name=$(basename $CONDA_PREFIX)
 # In CAMI2 Genome binning challenge metabinner showed good performance
 # A stand-alone ensemble binning method
 
-bash ln -s $CONDA_PREFIX/bin/scripts/* $CONDA_PREFIX/bin/
+ln -s $CONDA_PREFIX/bin/scripts/* $CONDA_PREFIX/bin/
 
 {
   echo "Make additional adjustments for the post-deployment of the Conda environment ${env_name} (metabinner)"
