@@ -15,7 +15,6 @@ def get_run_species():
     return species_sample_dict
 
 
-
 rule assemble_contigs:
     input:
         fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
@@ -42,47 +41,47 @@ rule assemble_contigs:
         sed 's/ /_/g' {params.opt}/{wildcards.sample}.contigs.fa > {output.contigs}
         """
 
-# 这里需要提前touch好species文件
-rule mkdir_assemble_contigs:
-    input:
-        config["root"] + "/" + config["meta"]["sampleList"]
-    output:
-        directory(config["root"] + "/" + config["folder"]["assemble_contigs"] + "/temp_species_dir")
-    params:
-        species_list=get_run_species().keys(),
-        opt=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/temp_species_dir"
-    run:
-        os.mkdir(params.opt)
-        for species in params.species_list:
-            shell(f"touch {params.opt}/{species}")
-
-
-rule co_assemble_contigs:
-    input:
-        species=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/temp_species_dir/{species}",
-        sp_fq1=expand(config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",sample=get_run_species()[wildcards.species]),
-        sp_fq2=expand(config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq",sample=get_run_species()[wildcards.species])
-    output:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{species}/{species}.contigs.fa"
-    message:
-        "09: Assemble contigs using megahit -------------------------"
-    threads:
-        24
-    params:
-        opt=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{species}/{species}_megahit"
-    conda:
-        config["root"] + "/" + config["envs"] + "/" + "megahit.yaml"
-    log:
-        config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{species}/{species}_run.log"
-    shell:
-        """
-        rm -rf {params.opt}
-        megahit -1 {input.sp_fq1} -2 {input.sp_fq2} -m 0.95 --min-contig-len 1000 \
-        --k-list 79,99,119,139 -t {threads} \
-        --out-dir {params.opt} --out-prefix {wildcards.species} > {log} 2>&1
-        # rename contigs, replace space with underscore
-        sed 's/ /_/g' {params.opt}/{wildcards.species}.contigs.fa > {output.contigs}
-        """
+# # 这里需要提前touch好species文件
+# rule mkdir_assemble_contigs:
+#     input:
+#         config["root"] + "/" + config["meta"]["sampleList"]
+#     output:
+#         directory(config["root"] + "/" + config["folder"]["assemble_contigs"] + "/temp_species_dir")
+#     params:
+#         species_list=get_run_species().keys(),
+#         opt=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/temp_species_dir"
+#     run:
+#         os.mkdir(params.opt)
+#         for species in params.species_list:
+#             shell(f"touch {params.opt}/{species}")
+#
+#
+# rule co_assemble_contigs:
+#     input:
+#         species=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/temp_species_dir/{species}",
+#         sp_fq1=expand(config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",sample=get_run_species()[wildcards.species]),
+#         sp_fq2=expand(config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq",sample=get_run_species()[wildcards.species])
+#     output:
+#         contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{species}/{species}.contigs.fa"
+#     message:
+#         "09: Assemble contigs using megahit -------------------------"
+#     threads:
+#         24
+#     params:
+#         opt=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{species}/{species}_megahit"
+#     conda:
+#         config["root"] + "/" + config["envs"] + "/" + "megahit.yaml"
+#     log:
+#         config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{species}/{species}_run.log"
+#     shell:
+#         """
+#         rm -rf {params.opt}
+#         megahit -1 {input.sp_fq1} -2 {input.sp_fq2} -m 0.95 --min-contig-len 1000 \
+#         --k-list 79,99,119,139 -t {threads} \
+#         --out-dir {params.opt} --out-prefix {wildcards.species} > {log} 2>&1
+#         # rename contigs, replace space with underscore
+#         sed 's/ /_/g' {params.opt}/{wildcards.species}.contigs.fa > {output.contigs}
+#         """
 
 rule report_assemble_contigs:
     input:
