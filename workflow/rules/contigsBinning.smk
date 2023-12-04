@@ -161,14 +161,29 @@ rule metabinner:
         12
     conda:
         config["root"] + "/" + config["envs"] + "/" + "metabinner.yaml"
+    params:
+        tmp_dir=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_tmp"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner.log"
     shell:
         """
-        mkdir -p {output.bins}
-        awk '{{if ($2>1000) print $0 }}' {input.depth} |cut -f -1,4 > {input.depth}.gt1000
-        python $CONDA_PREFIX/bin/scripts/gen_kmer.py {input.contigs} 1000 4 
-        python $CONDA_PREFIX/bin/scripts/Filter_tooshort.py {input.contigs} 1000
-        run_metabinner.sh -a {input.contigs} -o {output.bins} -d {input.depth}.gt1000 \
-        -k `dirname {input.contigs}`*.contigs_kmer_4_f1000.csv -t {threads} -p $CONDA_PREFIX/bin  > {log} 2>&1
+        mkdir -p {output.bins} {params.tmp_dir}
+        ln -sf {input.contigs} {params.tmp_dir}/
+        awk '{{if ($2>1000) print $0 }}' {input.depth} |cut -f -1,4 > {params.tmp_dir}/{wildcards.sample}.depth.gt1000
+        python $CONDA_PREFIX/bin/scripts/gen_kmer.py {params.tmp_dir}/{wildcards.sample}.contigs.fa 1000 4 
+        python $CONDA_PREFIX/bin/scripts/Filter_tooshort.py {params.tmp_dir}/{wildcards.sample}.contigs.fa 1000
+        run_metabinner.sh -a {params.tmp_dir}/{wildcards.sample}.contigs_1000.fa -o {output.bins} -d {params.tmp_dir}/{wildcards.sample}.depth.gt1000 \
+        -k {params.tmp_dir}/{wildcards.sample}.contigs_kmer_4_f1000.csv -t {threads} -p $CONDA_PREFIX/bin > {log} 2>&1 || true
+        if [ -f {output.bins}/metabinner_res/metabinner_result.tsv ]; then
+            mv {output.bins}/metabinner_res/metabinner_result.tsv {output.bins}/{wildcards.sample}_metabinner.tsv
+            python $CONDA_PREFIX/bin/scripts/gen_bins_from_tsv.py -f {params.tmp_dir}/{wildcards.sample}.contigs_1000.fa \
+            -r {output.bins}/metabinner_result.tsv -o {output.bins}
+            counter=1
+            for i in {output.bins}/*.fa; do
+                mv $i {output.bins}/{wildcards.sample}_metabinner.$counter.fa
+                ((counter++))
+            done
+        fi
+        rm -rf {output.bins}/metabinner_res
+        rm -rf {params.tmp_dir}
         """
