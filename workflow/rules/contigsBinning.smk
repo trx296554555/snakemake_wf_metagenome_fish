@@ -115,7 +115,7 @@ rule binning_maxbin2:
         """
 
 
-rule refine_bins_DAS_tool:
+checkpoint refine_bins_DAS_tool:
     input:
         contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
         metabat2_bins=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins",
@@ -148,7 +148,7 @@ rule refine_bins_DAS_tool:
         """
 
 
-rule metabinner:
+checkpoint metabinner:
     input:
         bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
         contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
