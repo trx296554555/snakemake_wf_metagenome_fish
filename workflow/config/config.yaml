@@ -31,3 +31,6 @@ folder:
     bin_anno_dbcan: 10_bin_annotation/02_dbcan
     bin_anno_vfdb: 10_bin_annotation/03_vfdb
 reads_length: 150
+co_assemble:
+    flag: True
+    col: [Species_Group, Test]

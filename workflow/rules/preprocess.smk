@@ -1,6 +1,7 @@
 import os
 import shutil
 import pandas as pd
+
 include: "../scripts/download_ref.py"
 
 if os.path.exists(f'{config["root"]}/{config["meta"]["sampleList"]}'):
@@ -50,6 +51,31 @@ def change_name(wrong_dir):
     return [os.path.join(dir_path,sample_id + "_1.clean.fq.gz"), os.path.join(dir_path,sample_id + "_2.clean.fq.gz")]
 
 
+def set_co_assemble():
+    # if coAssemble is needed, then prepare the input for coAssemble
+    col_list = list(config['co_assemble']['col'])
+    if all(col in all_sample_df.columns for col in col_list):
+        pass
+    else:
+        raise Exception(f'co_assemble columns not all found in {config["meta"]["sampleList"]}')
+
+    melted_df = all_sample_df.melt(id_vars=[
+        'Sample_ID'],value_vars=col_list,var_name='Cate',value_name='Groups')
+    result_df = melted_df.groupby(['Cate', 'Groups'])['Sample_ID'].apply(lambda x: ','.join(x)).reset_index()
+    result_df = result_df.rename(columns={'Sample_ID': 'Samples'})
+    result_df.to_csv(config['root'] + '/workflow/config/co_assemble_list.csv',index=False)
+
+    for i in result_df.index:
+        if all(sample in get_run_sample() for sample in result_df.loc[i, 'Samples'].split(',')):
+            info = f'{result_df.loc[i, "Cate"]}:The samples required for grouping {result_df.loc[i, "Groups"]}' \
+                   f' are all present in the current run sample. The co_assemble will be performed.'
+            print(info)
+            with open(config["root"] + f'/logs/co_assemble/{result_df.loc[i, "Groups"]}','w') as opt:
+                opt.write(result_df.loc[i, "Samples"] + '\n')
+        else:
+            pass
+
+
 def get_run_sample():
     root = config["root"] + "/" + config["folder"]["data"]
     run_sample = [sample for sample in os.listdir(root) if sample in all_sample_id.values]
@@ -60,11 +86,21 @@ def get_run_individual():
     run_sample = get_run_sample()
     run_individual = []
     for i in run_sample:
-        if (individual:=i.replace('C','').replace('P','')) in run_individual:
+        if (individual := i.replace('C','').replace('P','')) in run_individual:
             pass
         else:
             run_individual.append(individual)
     return run_individual
+
+
+def get_co_item():
+    if os.path.exists(config["root"] + f'/logs/co_assemble'):
+        return os.listdir(config["root"] + f'/logs/co_assemble')
+    else:
+        os.mkdir(config["root"] + f'/logs/co_assemble')
+        set_co_assemble()
+        return os.listdir(config["root"] + f'/logs/co_assemble')
+
 
 def check_run_sample():
     """
@@ -105,9 +141,9 @@ def check_run_sample():
     download_df = filtered_df.drop_duplicates(subset='Download_link')
     download_dict = dict(zip(download_df['Ref'],download_df['Download_link']))
     # Download reference genome
-    download_ref_fa_file(download_dict, config["root"] + "/" + config["folder"]["index"])
+    download_ref_fa_file(download_dict,config["root"] + "/" + config["folder"]["index"])
     # Check reference genome md5
-    ref_fa_file_md5_check(download_dict, config["root"] + "/" + config["folder"]["index"])
+    ref_fa_file_md5_check(download_dict,config["root"] + "/" + config["folder"]["index"])
     return file_list
 
 
@@ -129,7 +165,7 @@ rule check_run:
         file=check_run_sample(),
         md5=expand(config["root"] + "/logs/md5_info/{sample}_check_md5.log",sample=get_run_sample())
     output:
-        "logs/01_check_run.log"
+        file=config["root"] + "/logs/01_check_run.log"
     message:
         "01: Checking which samples need processing ------------------------------------------"
     run:
@@ -144,7 +180,7 @@ rule check_run:
                         print(f'Dir {dir_name} not found, maybe it has been moved.')
         un_exp_sample = os.listdir(os.path.join(config["root"],config["folder"]["data"],'unexpect_sample'))
         md5_err_sample = os.listdir(os.path.join(config["root"],config["folder"]["data"],'md5_error_sample'))
-        with open('logs/01_check_run.log','w') as f:
+        with open(output.file,'w') as f:
             f.write(f'Run sample num: {len(get_run_sample())}\n')
             f.write(f'Run samples:\n')
             f.write("\n".join(get_run_sample()) + "\n\n")
@@ -152,3 +188,12 @@ rule check_run:
             f.write(f'Unexpected samples: {un_exp_sample}\n\n')
             f.write(f'MD5 error sample num: {len(md5_err_sample)}\n')
             f.write(f'MD5 error samples: {md5_err_sample}\n\n')
+
+        # Check if coAssemble is needed, then prepare the input for coAssemble
+        if config['co_assemble']['flag']:
+            result_df = pd.read_csv(config['root'] + '/workflow/config/co_assemble_list.csv')
+            with open(output.file,'a') as f:
+                f.write(f'co_assembly {os.listdir(config["root"] + "/logs/co_assemble")} needed.\n')
+        else:
+            with open(output.file,'a') as f:
+                f.write('co_assembly is not needed.\n')

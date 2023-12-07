@@ -47,13 +47,15 @@ nohup snakemake -c96 --use-conda &
 | [kraken2](https://github.com/DerrickWood/kraken2/wiki/Manual)                         | v2.1.3  | 分类          | 24   | <80G | <10G  | ≈1min   |
 | [krakenTools](https://github.com/jenniferlu717/KrakenTools)                           | v1.2    | 下游分析        | 1    | <1G  | <1G   | ≈1min   |
 | [bracken](https://github.com/jenniferlu717/Bracken)                                   | v2.9    | 校正          | 1    | <1G  | <1G   | ≈0.1min |
-| [mitoZ ](https://github.com/linzhi2013/MitoZ/wiki)                                    | v3.6    | 提取宿主线粒体基因组  | 24   | <10G | <10G  | ≈10min  |
+| [mitoZ](https://github.com/linzhi2013/MitoZ/wiki)                                     | v3.6    | 宿主线粒体       | 24   | <10G | <10G  | ≈10min  |
 | [megahit](https://github.com/voutcn/megahit/wiki)                                     | v1.2.9  | 组装          | 24   | <10G | <10G  | ≈30min  |
 | [prodigal](https://github.com/hyattpd/Prodigal/wiki)                                  | v2.6.3  | 预测基因        | 12   | <1G  | <1G   | ≈10min  |
 | [metabat2](https://bitbucket.org/berkeleylab/metabat/wiki/Best%20Binning%20Practices) | v2.15   | binning     | 12   | <20G | <1G   | ≈10min  |
 | [CONCOCT](https://github.com/BinPro/CONCOCT)                                          | v1.1.0  | binning     | 12   | <1G  | <1G   | ≈30min  |
 | [maxbin2](https://sourceforge.net/p/maxbin/code/ci/master/tree/)                      | v2.2.7  | binning     | 12   | <1G  | <1G   | ≈1min   |
-
+| [MetaBinner](https://github.com/ziyewang/MetaBinner)                                  | v1.4.4  | binning     | 12   | <10G | <10G  | ≈45min  |
+| [DAS Tool](https://github.com/cmks/DAS_Tool)                                          | v1.1.6  | refine bins | 12   | <10G | <1G   | ≈30min  |
 
 # 文件和目录是名词+动词的形式，如：readsClassify
+
 # rule 是动词+名词的形式，如：classify_reads

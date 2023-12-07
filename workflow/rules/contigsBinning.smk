@@ -1,4 +1,4 @@
-rule index_and_alignment:
+rule align_reads_contigs:
     input:
         contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
         fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
@@ -25,7 +25,7 @@ rule index_and_alignment:
         samtools index {output.bam} 2>&1
         """
 
-rule generate_coverage:
+rule calculate_coverage:
     input:
         bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
     output:
@@ -177,7 +177,7 @@ rule metabinner:
         if [ -f {output.bins}/metabinner_res/metabinner_result.tsv ]; then
             mv {output.bins}/metabinner_res/metabinner_result.tsv {output.bins}/{wildcards.sample}_metabinner.tsv
             python $CONDA_PREFIX/bin/scripts/gen_bins_from_tsv.py -f {params.tmp_dir}/{wildcards.sample}.contigs_1000.fa \
-            -r {output.bins}/metabinner_result.tsv -o {output.bins}
+            -r {output.bins}/{wildcards.sample}_metabinner.tsv -o {output.bins}
             counter=1
             for i in {output.bins}/*.fa; do
                 mv $i {output.bins}/{wildcards.sample}_metabinner.$counter.fa
