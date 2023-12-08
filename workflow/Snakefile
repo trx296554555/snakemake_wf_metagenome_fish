@@ -34,7 +34,7 @@ rule all:
         # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins", sample=get_run_sample()),
         # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/das_merged_bins", sample=get_run_sample()),
         # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_bins", sample=get_run_sample()),
-        config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins"
+        config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done"
     message:
         """
         Start to run the pipeline. --------------------------------------------------

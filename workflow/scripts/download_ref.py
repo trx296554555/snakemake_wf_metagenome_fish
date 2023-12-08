@@ -1,4 +1,4 @@
-import os
+import os, subprocess
 import asyncio
 from async_download import main_download
 
@@ -51,4 +51,6 @@ def ref_fa_file_md5_check(ref_dict, db_dir):
                     pass
         with open(os.path.join(db_dir, md5), 'w') as f:
             f.write(f'{raw_md5}  {fna}\n')
-        os.system(f'cd {db_dir} && md5sum -c {os.path.join(db_dir, md5)} >> {os.path.join(db_dir, "md5_check.log")}')
+        command = f'cd {db_dir} && md5sum -c {os.path.join(db_dir, md5)} >> {os.path.join(db_dir, "md5_check.log")}'
+        if subprocess.check_output(command, shell=True, executable="/bin/bash", text=True):
+            raise Exception(f'{fna} is not downloaded successfully!')
