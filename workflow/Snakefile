@@ -15,7 +15,6 @@ include: "rules/preprocess.smk"
 include: "rules/hostRemove.smk"
 include: "rules/readsClassify.smk"
 include: "rules/getMitogenome.smk"
-include: "rules/contigsCoAssemble.smk"
 include: "rules/contigsAssemble.smk"
 include: "rules/genePrediction.smk"
 include: "rules/contigsBinning.smk"
@@ -25,7 +24,7 @@ include: "rules/binsRefine.smk"
 rule all:
     input:
         config["root"] + "/" + config["folder"]["logs"] + "/01_check_run.log",
-        config["root"] + "/" + config["folder"]["reports"] + "/01_rm_host.report",
+        # config["root"] + "/" + config["folder"]["reports"] + "/01_rm_host.report",
         # config["root"] + "/" + config["folder"]["reports"] + "/02_reads_classify.report",
         # config["root"] + "/" + config["folder"]["reports"] + "/03_get_mitogenome.report",
         # config["root"] + "/" + config["folder"]["reports"] + "/05_assemble_contigs.report",

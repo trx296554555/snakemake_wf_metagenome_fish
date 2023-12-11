@@ -1,11 +1,32 @@
 import os
 import pandas as pd
 
+def get_co_assemble_fq(wildcards):
+    co_assemble_file = config['root'] + '/workflow/config/co_assemble_list.csv'
+    if wildcards.sample in get_co_item():
+        co_assemble_df = pd.read_csv(co_assemble_file)
+        sample_df = co_assemble_df[co_assemble_df['Groups'] == wildcards.sample]
+        sample_list = sample_df['Samples'].tolist()[0].strip("'").split(',')
+        res_dict = {'fq1':[], 'fq2':[]}
+        for sample in sample_list:
+            res_dict['fq1'].append(f'{config["root"]}/{config["folder"]["rm_host"]}/{sample}/{sample}_paired_1.fq')
+            res_dict['fq2'].append(f'{config["root"]}/{config["folder"]["rm_host"]}/{sample}/{sample}_paired_2.fq')
+        return res_dict
+    else:
+        return {'fq1':f'{config["root"]}/{config["folder"]["rm_host"]}/{wildcards.sample}/{wildcards.sample}_paired_1.fq',
+                'fq2':f'{config["root"]}/{config["folder"]["rm_host"]}/{wildcards.sample}/{wildcards.sample}_paired_2.fq'}
+
+
+def get_assemble_len(wildcards):
+    if wildcards.sample in get_co_item():
+        return config["co_assemble"]["min_ctg_len"]
+    else:
+        return "300"
+
 
 rule assemble_contigs:
     input:
-        fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
-        fq2=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq"
+        unpack(get_co_assemble_fq)
     output:
         contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa"
     message:
@@ -13,7 +34,8 @@ rule assemble_contigs:
     threads:
         24
     params:
-        opt=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}_megahit"
+        opt=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}_megahit",
+        min_len=get_assemble_len
     conda:
         config["root"] + "/" + config["envs"] + "/" + "megahit.yaml"
     benchmark:
@@ -23,7 +45,9 @@ rule assemble_contigs:
     shell:
         """
         rm -rf {params.opt}
-        megahit -1 {input.fq1} -2 {input.fq2} -m 0.95 --min-contig-len 300 \
+        fq1_str=$(echo {input.fq1} | sed 's/ /,/g')
+        fq2_str=$(echo {input.fq2} | sed 's/ /,/g')
+        megahit -1 $fq1_str -2 $fq2_str -m 0.95 --min-contig-len {params.min_len} \
         --k-list 79,99,119,139 -t {threads} \
         --out-dir {params.opt} --out-prefix {wildcards.sample} > {log} 2>&1
         # rename contigs, replace space with underscore

@@ -34,3 +34,4 @@ reads_length: 150
 co_assemble:
     flag: True
     col: [Site_Group, Species_Group]
+    min_ctg_len: 1000

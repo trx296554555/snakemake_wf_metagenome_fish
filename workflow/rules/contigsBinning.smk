@@ -1,7 +1,6 @@
 rule build_contigs_index:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{item}" +
-                ("/{item}" if "{item}" in get_co_item() else "/co_{item}") + ".contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{item}/{item}.contigs.fa",
     output:
         index=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/{item}_contig_index"),
     message:
@@ -37,7 +36,7 @@ rule align_reads_contigs:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/mapping/{sample}.mapping.log"
     shell:
         """
-        bowtie2 -x {input.index}/{wildcards.sample} -1 {input.fq1} -2 {input.fq2} -S {output.sam} --threads {threads} > {log} 2>&1
+        bowtie2 -x {input.index}/{wildcards.item} -1 {input.fq1} -2 {input.fq2} -S {output.sam} --threads {threads} > {log} 2>&1
         samtools view -bS -@ {threads} {output.sam} -o {output.bam} 2>&1
         samtools sort -@ {threads} {output.bam} -o {output.bam} 2>&1
         samtools index {output.bam} 2>&1
@@ -100,8 +99,7 @@ rule calculate_coverage:
 
 rule binning_metabat2:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
-                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
         depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.depth",
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins")
@@ -123,8 +121,7 @@ rule binning_metabat2:
 
 rule binning_concoct:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
-                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
         coverage=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.coverage",
     output:
         opt=temp(directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_opt")),
@@ -153,8 +150,7 @@ rule binning_concoct:
 
 rule binning_maxbin2:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
-                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
         coverage=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.coverage",
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins"),
@@ -178,8 +174,7 @@ rule binning_maxbin2:
 
 checkpoint refine_bins_DAS_tool:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
-                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
         metabat2_bins=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins",
         concoct_bins=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_bins",
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.faa",
@@ -203,7 +198,7 @@ checkpoint refine_bins_DAS_tool:
     shell:
         """
         Fasta_to_Contig2Bin.sh -e fa -i {input.metabat2_bins} > {params.metabat2_c2b} 2>&1
-        Fasta_to_Contig2Bin.sh -e fa -i {input.concoct_bins} > {params.concoct_c2b} 2>&1 
+        Fasta_to_Contig2Bin.sh -e fa -i {input.concoct_bins} > {params.concoct_c2b} 2>&1
         Fasta_to_Contig2Bin.sh -e fasta -i {input.maxbin2_bins} > {params.maxbin2_c2b} 2>&1
         mkdir -p {output.bins}
         DAS_Tool -i {params.metabat2_c2b},{params.concoct_c2b},{params.maxbin2_c2b} -l metabat2,concoct,maxbin2 \
@@ -214,8 +209,7 @@ checkpoint refine_bins_DAS_tool:
 
 checkpoint metabinner:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
-                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
         depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.depth",
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_bins")
