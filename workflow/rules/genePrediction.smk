@@ -1,6 +1,7 @@
 rule predict_coding_genes:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa"
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
+                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
     output:
         genes=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.gene.fa",
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.faa",
@@ -14,6 +15,8 @@ rule predict_coding_genes:
         stats=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.stats",
     conda:
         config["root"] + "/" + config["envs"] + "/" + "checkm.yaml"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["gene_prediction"] + "/{sample}.log"
     log:
         config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.log"
     shell:

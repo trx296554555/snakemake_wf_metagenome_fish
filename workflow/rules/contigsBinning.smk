@@ -1,29 +1,81 @@
-rule align_reads_contigs:
+rule build_contigs_index:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
-        fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
-        fq2=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq"
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{item}" +
+                ("/{item}" if "{item}" in get_co_item() else "/co_{item}") + ".contigs.fa",
     output:
-        index=temp(directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}_contig_index")),
-        sam=temp(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.sam"),
-        bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
+        index=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/{item}_contig_index"),
     message:
-        "13: Indexing and alignment of contigs to reads --------------------------"
+        "13.1: Indexing and alignment of contigs to reads --------------------------"
     threads:
         24
     conda:
         config["root"] + "/" + config["envs"] + "/" + "tools.yaml"
-    log:
-        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/mapping.log"
     shell:
         """
         mkdir -p {output.index}
-        bowtie2-build -f {input.contigs} {output.index}/{wildcards.sample} --threads {threads} --offrate 1 > /dev/null 2>&1
-        bowtie2 -x {output.index}/{wildcards.sample} -1 {input.fq1} -2 {input.fq2} -S {output.sam} --threads {threads} > {log} 2>&1
+        bowtie2-build -f {input.contigs} {output.index}/{wildcards.item} --threads {threads} --offrate 1 > /dev/null 2>&1
+        """
+
+
+rule align_reads_contigs:
+    input:
+        index=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/{item}_contig_index",
+        fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
+        fq2=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq"
+    output:
+        sam=temp(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/mapping/{sample}.sam"),
+        bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/mapping/{sample}.bam",
+    message:
+        "13.2: Indexing and alignment of contigs to reads --------------------------"
+    threads:
+        12
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "tools.yaml"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["contigs_binning"] + "/mapping/{item}_{sample}.log"
+    log:
+        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/mapping/{sample}.mapping.log"
+    shell:
+        """
+        bowtie2 -x {input.index}/{wildcards.sample} -1 {input.fq1} -2 {input.fq2} -S {output.sam} --threads {threads} > {log} 2>&1
         samtools view -bS -@ {threads} {output.sam} -o {output.bam} 2>&1
         samtools sort -@ {threads} {output.bam} -o {output.bam} 2>&1
         samtools index {output.bam} 2>&1
         """
+
+
+def get_sorted_sample_bam(wildcards):
+    if wildcards.item in get_co_item():
+        co_assemble_df = pd.read_csv(config['root'] + '/workflow/config/co_assemble_list.csv')
+        sample_df = co_assemble_df[co_assemble_df['Groups'] == wildcards.item]
+        sample_list = sample_df['Samples'].tolist()[0].strip("'").split(',')
+        return expand(config["root"] + "/" + config["folder"][
+            "contigs_binning"] + "/" + wildcards.item + "/mapping/{sample}.bam",sample=sample_list)
+    else:
+        return config["root"] + "/" + config["folder"][
+            "contigs_binning"] + f"/{wildcards.item}/mapping/{wildcards.item}.bam"
+
+
+# 对于co_assemble的contigs的比对结果，合并bam文件
+rule merge_bam:
+    input:
+        all_bam=get_sorted_sample_bam
+    output:
+        merge_bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/{item}.bam"
+    message:
+        "13.3: Merge bam files --------------------------"
+    threads:
+        1
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "tools.yaml"
+    log:
+        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{item}/merged_bam.log"
+    shell:
+        """
+        samtools merge -@ {threads} -f {output.merge_bam} {input.all_bam} 2>&1 > {log}
+        samtools index {output.merge_bam} 2>&1
+        """
+
 
 rule calculate_coverage:
     input:
@@ -38,18 +90,19 @@ rule calculate_coverage:
     conda:
         config["root"] + "/" + config["envs"] + "/" + "binning.yaml"
     log:
-        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/mapping.log"
+        config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/coverage.log"
     shell:
         """
-        jgi_summarize_bam_contig_depths --outputDepth {output.depth} {input.bam} >> {log} 2>&1
+        jgi_summarize_bam_contig_depths --outputDepth {output.depth} {input.bam} > {log} 2>&1
         awk -v filename={wildcards.sample} 'BEGIN {{OFS="\t"; print "contig", "cov_mean_sample_" filename}} NR>1 {{print $1, $3 + $4}}' {output.depth} > {output.coverage}
         """
 
 
 rule binning_metabat2:
     input:
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
+                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
         depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.depth",
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa"
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins")
     message:
@@ -58,6 +111,8 @@ rule binning_metabat2:
         12
     conda:
         config["root"] + "/" + config["envs"] + "/" + "binning.yaml"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["contigs_binning"] + "/metabat2/{sample}.log"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2.log"
     shell:
@@ -68,7 +123,8 @@ rule binning_metabat2:
 
 rule binning_concoct:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
+                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
         coverage=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.coverage",
     output:
         opt=temp(directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_opt")),
@@ -79,6 +135,8 @@ rule binning_concoct:
         12
     conda:
         config["root"] + "/" + config["envs"] + "/" + "concoct.yaml"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["contigs_binning"] + "/concoct/{sample}.log"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct.log"
     shell:
@@ -95,7 +153,8 @@ rule binning_concoct:
 
 rule binning_maxbin2:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
+                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
         coverage=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.coverage",
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins"),
@@ -105,6 +164,8 @@ rule binning_maxbin2:
         12
     conda:
         config["root"] + "/" + config["envs"] + "/" + "binning.yaml"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["contigs_binning"] + "/maxbin2/{sample}.log"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2.log"
     shell:
@@ -117,7 +178,8 @@ rule binning_maxbin2:
 
 checkpoint refine_bins_DAS_tool:
     input:
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
+                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
         metabat2_bins=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins",
         concoct_bins=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_bins",
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.faa",
@@ -134,6 +196,8 @@ checkpoint refine_bins_DAS_tool:
         metabat2_c2b=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_contigs2bin.tsv",
         concoct_c2b=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_contigs2bin.tsv",
         maxbin2_c2b=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_contigs2bin.tsv"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["contigs_binning"] + "/dastool/{sample}.log"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/das_merged_bins.log"
     shell:
@@ -150,8 +214,8 @@ checkpoint refine_bins_DAS_tool:
 
 checkpoint metabinner:
     input:
-        bam=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.bam",
-        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
+        contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}" +
+                ("/{sample}" if "{sample}" in get_co_item() else "/co_{sample}") + ".contigs.fa",
         depth=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/{sample}.depth",
     output:
         bins=directory(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_bins")
@@ -163,6 +227,8 @@ checkpoint metabinner:
         config["root"] + "/" + config["envs"] + "/" + "metabinner.yaml"
     params:
         tmp_dir=config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_tmp"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["contigs_binning"] + "/metabinner/{sample}.log"
     log:
         config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner.log"
     shell:

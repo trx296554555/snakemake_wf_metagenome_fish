@@ -100,6 +100,8 @@ rule get_mitogenome:
         out_path=config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}",
     conda:
         config["root"] + "/" + config["envs"] + "/" + "mitozEnv.yaml"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["mitogenome"] + "/{individual}.log"
     log:
         config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}_mitoz.log"
     shell:

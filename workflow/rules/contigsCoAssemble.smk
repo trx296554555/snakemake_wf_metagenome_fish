@@ -22,7 +22,7 @@ if config['co_assemble']['flag'] and os.path.exists(co_assemble_file):
             unpack(get_co_assemble_fq),
             co_assemble_item=config["root"] + "/logs/co_assemble/{item}",
         output:
-            contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{item}/{item}.contigs.fa"
+            contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{item}/co_{item}.contigs.fa"
         message:
             "09: Assemble contigs using megahit -------------------------"
         threads:
@@ -31,8 +31,10 @@ if config['co_assemble']['flag'] and os.path.exists(co_assemble_file):
             opt=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{item}/{item}_megahit"
         conda:
             config["root"] + "/" + config["envs"] + "/" + "megahit.yaml"
+        benchmark:
+            config["root"] + "/benchmark/" + config["folder"]["assemble_contigs"] + "/co_{item}.log"
         log:
-            config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{item}/{item}_co_run.log"
+            config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{item}/co_{item}_run.log"
         shell:
             """
             rm -rf {params.opt}

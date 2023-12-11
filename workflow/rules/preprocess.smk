@@ -6,7 +6,6 @@ include: "../scripts/download_ref.py"
 
 if os.path.exists(f'{config["root"]}/{config["meta"]["sampleList"]}'):
     all_sample_df = pd.read_csv(f'{config["root"]}/{config["meta"]["sampleList"]}')
-    all_sample_id = all_sample_df['Sample_ID']
 else:
     raise Exception(f'No {config["meta"]["sampleList"]} in {config["root"]}')
     exit(1)
@@ -59,8 +58,7 @@ def set_co_assemble():
     else:
         raise Exception(f'co_assemble columns not all found in {config["meta"]["sampleList"]}')
 
-    melted_df = all_sample_df.melt(id_vars=[
-        'Sample_ID'],value_vars=col_list,var_name='Cate',value_name='Groups')
+    melted_df = all_sample_df.melt(id_vars=['Sample_ID'],value_vars=col_list,var_name='Cate',value_name='Groups')
     result_df = melted_df.groupby(['Cate', 'Groups'])['Sample_ID'].apply(lambda x: ','.join(x)).reset_index()
     result_df = result_df.rename(columns={'Sample_ID': 'Samples'})
     result_df.to_csv(config['root'] + '/workflow/config/co_assemble_list.csv',index=False)
@@ -76,10 +74,12 @@ def set_co_assemble():
             pass
 
 
+def get_all_sample():
+    return all_sample_df['Sample_ID'].dropna().tolist()
+
+
 def get_run_sample():
-    root = config["root"] + "/" + config["folder"]["data"]
-    run_sample = [sample for sample in os.listdir(root) if sample in all_sample_id.values]
-    return run_sample
+    return all_sample_df['Use_Sample'].dropna().tolist()
 
 
 def get_run_individual():
@@ -102,43 +102,37 @@ def get_co_item():
         return os.listdir(config["root"] + f'/logs/co_assemble')
 
 
-def check_run_sample():
+def check_all_sample():
     """
-    检查样本与对应的参考基因组是否存在，只会处理sampleList.csv中存在的样本
+    单样本模式：只会处理sampleList.csv中Run_Sample列中指定的样本
+    多样本合并模式：按config.yaml中指定列生成分组，
+    检查样本与对应的参考基因组是否存在，
     严格检测原始数据文件夹格式，每个样本对应一个文件夹，文件夹名为样本名
     每个文件夹下有三个文件，分别为MD5.txt，样本名_1.clean.fq.gz，样本名_2.clean.fq.gz
 
-    Only samples present in sampleList.csv will be processed
+    Only samples present in allSampleList.csv will be processed
     Strictly detect the original data folder format, each sample corresponds to a folder
     The folder name is the sample name, which are MD5.txt, sample name_1.clean.fq.gz, sample name_2.clean.fq.gz
     """
-    root = config["root"] + "/" + config["folder"]["data"]
-    exist_sample = os.listdir(root)
-    run_sample = [sample for sample in os.listdir(root) if sample in all_sample_id.values]
+    all_samples = get_all_sample()
+    data_root = config["root"] + "/" + config["folder"]["data"]
+    exist_samples = os.listdir(data_root)
+    if not set(all_samples).issubset(exist_samples):
+        missing_samples = set(all_samples) - set(exist_samples)
+        raise ValueError(f"The following samples do not exist： {missing_samples}")
 
-    unexpect_sample = [sample for sample in exist_sample if sample not in all_sample_id.values]
-    if os.path.exists(os.path.join(root,'unexpect_sample')):
-        unexpect_sample.remove('unexpect_sample')
-    else:
-        os.mkdir(os.path.join(root,'unexpect_sample'))
-    if os.path.exists(os.path.join(root,'md5_error_sample')):
-        unexpect_sample.remove('md5_error_sample')
-    else:
-        os.mkdir(os.path.join(root,'md5_error_sample'))
-    for sample in unexpect_sample:
-        shutil.move(os.path.join(root,sample),os.path.join(root,'unexpect_sample',sample))
-
+    # 对文件命名不规范的样本进行处理
     file_list = []
-    for dir_ in run_sample:
-        this_files = os.listdir(os.path.join(root,dir_))
+    for dir_ in all_samples:
+        this_files = os.listdir(os.path.join(data_root,dir_))
         right_files = ['MD5.txt', f'{dir_}_1.clean.fq.gz', f'{dir_}_2.clean.fq.gz']
         if len(this_files) == 3 and sorted(this_files) == sorted(right_files):
-            file_list += [os.path.join(root,dir_,file) for file in this_files if file.endswith('.clean.fq.gz')]
+            file_list += [os.path.join(data_root,dir_,file) for file in this_files if file.endswith('.clean.fq.gz')]
         else:
-            file_list += change_name(os.path.join(root,dir_))
+            file_list += change_name(os.path.join(data_root,dir_))
 
-    filtered_df = all_sample_df[all_sample_df['Sample_ID'].isin(run_sample)]
-    download_df = filtered_df.drop_duplicates(subset='Download_link')
+    # 预先检测宿主基因组是否存在，不存在则下载
+    download_df = all_sample_df.drop_duplicates(subset='Download_link')
     download_dict = dict(zip(download_df['Ref'],download_df['Download_link']))
     # Download reference genome
     download_ref_fa_file(download_dict,config["root"] + "/" + config["folder"]["index"])
@@ -159,37 +153,36 @@ rule check_md5:
         "cd `dirname {input}` && md5sum -c {input} > {output} || true "
 
 
-rule check_run:
+rule check_sample:
     priority: 99
     input:
-        file=check_run_sample(),
-        md5=expand(config["root"] + "/logs/md5_info/{sample}_check_md5.log",sample=get_run_sample())
+        file=check_all_sample(),
+        md5=expand(config["root"] + "/logs/md5_info/{sample}_check_md5.log",sample=get_all_sample())
     output:
         file=config["root"] + "/logs/01_check_run.log"
     message:
         "01: Checking which samples need processing ------------------------------------------"
     run:
+        data_root = config["root"] + "/" + config["folder"]["data"]
+        if not os.path.exists(os.path.join(data_root,'md5_error_sample')):
+            os.mkdir(os.path.join(data_root,'md5_error_sample'))
         for i in input.md5:
             dir_name = os.path.basename(i).replace('_check_md5.log','')
             with open(i,'r') as f:
                 if 'FAILED' in f.read() or '失败' in f.read():
                     try:
-                        shutil.move(os.path.join(config["root"],config["folder"]["data"],dir_name),
-                            os.path.join(config["root"],config["folder"]["data"],'md5_error_sample',dir_name))
+                        shutil.move(os.path.join(data_root,dir_name),
+                            os.path.join(data_root,'md5_error_sample',dir_name))
                     except FileNotFoundError:
                         print(f'Dir {dir_name} not found, maybe it has been moved.')
-        un_exp_sample = os.listdir(os.path.join(config["root"],config["folder"]["data"],'unexpect_sample'))
-        md5_err_sample = os.listdir(os.path.join(config["root"],config["folder"]["data"],'md5_error_sample'))
+        md5_err_sample = os.listdir(os.path.join(data_root,'md5_error_sample'))
         with open(output.file,'w') as f:
             f.write(f'Run sample num: {len(get_run_sample())}\n')
             f.write(f'Run samples:\n')
             f.write("\n".join(get_run_sample()) + "\n\n")
-            f.write(f'Unexpected sample num: {len(un_exp_sample)}\n')
-            f.write(f'Unexpected samples: {un_exp_sample}\n\n')
             f.write(f'MD5 error sample num: {len(md5_err_sample)}\n')
             f.write(f'MD5 error samples: {md5_err_sample}\n\n')
 
-        # Check if coAssemble is needed, then prepare the input for coAssemble
         if config['co_assemble']['flag']:
             result_df = pd.read_csv(config['root'] + '/workflow/config/co_assemble_list.csv')
             with open(output.file,'a') as f:

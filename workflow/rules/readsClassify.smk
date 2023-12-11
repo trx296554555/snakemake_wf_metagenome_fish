@@ -16,6 +16,8 @@ rule generate_kraken2_report:
         db=config["db_root"] + "/" + config["db"]["kraken2"]
     conda:
         config["root"] + "/" + config["envs"] + "/" + "kraken2.yaml"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["reads_classify"] + "/{sample}.log"
     log:
         config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.log"
     shell:

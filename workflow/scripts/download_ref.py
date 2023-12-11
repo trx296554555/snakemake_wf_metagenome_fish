@@ -30,8 +30,8 @@ def ref_fa_file_md5_check(ref_dict, db_dir):
         with open(os.path.join(db_dir, 'md5_check.log'), 'r') as f:
             for line in f:
                 line = line.split(':')
-                if 'OK' in line[1]:
-                    ref_dict.pop(line[0].split('.')[0].replace('_', ' '), None)
+                if 'OK' in line[1] or '成功' in line[1]:
+                    ref_dict.pop(line[0].split('.')[0], None)
     except FileNotFoundError:
         pass
     if not ref_dict:

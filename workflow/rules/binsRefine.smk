@@ -18,7 +18,7 @@ rule gather_need_bins:
         das_tool_bins=get_das_tool_names,
         metabinner_bins=get_metabinner_names,
     output:
-        bins=config["root"] + "/" + config["folder"]["bin_refine"] + "/need_bins/" + "{sample}_bin.list",
+        bins=config["root"] + "/" + config["folder"]["bin_refine"] + "/need_bins/{sample}_bin.list",
     run:
         shell("mkdir -p `dirname {output.bins}`")
         with open(output.bins,"w") as f:
@@ -33,7 +33,8 @@ rule gather_all_bins:
         sample_bins=expand(config["root"] + "/" + config["folder"][
             "bin_refine"] + "/need_bins/" + "{sample}_bin.list",sample=get_run_sample()),
         co_assemble_bins=expand(config["root"] + "/" + config["folder"][
-            "bin_refine"] + "/need_bins/" + "{item}_bin.list",item=get_co_item())
+            "bin_refine"] + "/need_bins/" + "{item}_bin.list",item=get_co_item()) if config["co_assemble"][
+            "flag"] else [],
     output:
         all_bins=directory(config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/"),
         gather_done=touch(config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done")

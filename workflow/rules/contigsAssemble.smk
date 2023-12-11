@@ -16,6 +16,8 @@ rule assemble_contigs:
         opt=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}_megahit"
     conda:
         config["root"] + "/" + config["envs"] + "/" + "megahit.yaml"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["assemble_contigs"] + "/{sample}.log"
     log:
         config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}_run.log"
     shell:
@@ -36,7 +38,7 @@ rule report_assemble_contigs:
                 "assemble_contigs"] + "/{sample}/{sample}_run.log",sample=get_run_sample()),
         co_megahit_logs=expand(
             config["root"] + "/" + config["folder"][
-                "assemble_contigs"] + "/{item}/{item}_co_run.log",item=get_co_item()) if config["co_assemble"]["flag"] else []
+                "assemble_contigs"] + "/{item}/co_{item}_run.log",item=get_co_item()) if config["co_assemble"]["flag"] else []
     output:
         assemble_contigs_report=config["root"] + "/" + config["folder"]["reports"] + "/05_assemble_contigs.report"
     run:
