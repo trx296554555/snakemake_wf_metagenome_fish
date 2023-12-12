@@ -9,7 +9,7 @@ rule build_index:
     input:
         config["root"] + "/" + config["folder"]["index"] + "/{species}.fna.gz"
     output:
-        config["root"] + "/" + config["folder"]["index"] + "/{species}_bowtie2_index"
+        directory(config["root"] + "/" + config["folder"]["index"] + "/{species}_bowtie2_index")
     threads:
         24
     message:
