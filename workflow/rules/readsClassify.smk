@@ -40,7 +40,7 @@ rule generate_bracken_report:
         1
     params:
         db=config["db_root"] + "/" + config["db"]["kraken2"],
-        reads_len=config["reads_length"],
+        reads_len=config["meta"]["reads_length"],
         tmp_log=config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.bracken.log",
         final_log=config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.log",
         bracken2trx=config["root"] + "/workflow/scripts/bracken_to_trx.py"
@@ -81,11 +81,12 @@ rule merge_bracken_res:
 
 rule report_reads_classify:
     input:
+        merge_bracken = config["root"] + "/" + config["folder"]["reads_classify"] + "/all_bracken_res.tsv",
         kraken2_report=expand(config["root"] + "/" + config["folder"]["reads_classify"] + "/{sample}.kraken", sample=get_run_sample()),
     output:
         reads_classify_report=config["root"] + "/" + config["folder"]["reports"] + "/02_reads_classify.report"
     run:
-        report_list = ['Eukaryota', 'Bacteria', 'Viruses', 'Archaea', 'unclassified', 'Homo sapiens']
+        report_list = ['Eukaryota', 'Fungi', 'Bacteria', 'Viruses', 'Archaea', 'unclassified', 'Homo sapiens']
         res_dict = {}
         for k_file in input.kraken2_report:
             sample = os.path.basename(k_file).split('.')[0]

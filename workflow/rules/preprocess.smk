@@ -64,15 +64,15 @@ def set_co_assemble():
     result_df.to_csv(config['root'] + '/workflow/config/co_assemble_list.csv',index=False)
 
     for i in result_df.index:
-        if all(sample in get_run_sample() for sample in result_df.loc[i, 'Samples'].split(',')):
+        if all(sample in os.listdir(f"{config['root']}/{config['folder']['data']}") for sample in result_df.loc[i, 'Samples'].split(',')):
             info = f'{result_df.loc[i, "Cate"]}:The samples required for grouping {result_df.loc[i, "Groups"]}' \
-                   f' are all present in the current run sample. The co_assemble will be performed.'
+                   f' are all present in the current Server. The co_assemble will be performed.'
             print(info)
             with open(config["root"] + f'/logs/co_assemble/{result_df.loc[i, "Groups"]}','w') as opt:
                 opt.write(result_df.loc[i, "Samples"] + '\n')
         else:
-            pass
-
+            raise Exception(f'{result_df.loc[i, "Cate"]}:The samples required for grouping {result_df.loc[i, "Groups"]}'
+                            f' are not all present in the current Server. The co_assemble will not be performed.')
 
 def get_all_sample():
     return all_sample_df['Sample_ID'].dropna().tolist()
@@ -94,12 +94,13 @@ def get_run_individual():
 
 
 def get_co_item():
-    if os.path.exists(config["root"] + f'/logs/co_assemble'):
-        return os.listdir(config["root"] + f'/logs/co_assemble')
+    tmp_co_assemble_path = config["root"] + f'/logs/co_assemble'
+    if os.path.exists(tmp_co_assemble_path):
+        return os.listdir(tmp_co_assemble_path)
     else:
-        os.mkdir(config["root"] + f'/logs/co_assemble')
+        os.mkdir(tmp_co_assemble_path)
         set_co_assemble()
-        return os.listdir(config["root"] + f'/logs/co_assemble')
+        return os.listdir(tmp_co_assemble_path)
 
 
 def check_all_sample():
@@ -183,7 +184,7 @@ rule check_sample:
             f.write(f'MD5 error sample num: {len(md5_err_sample)}\n')
             f.write(f'MD5 error samples: {md5_err_sample}\n\n')
 
-        if config['co_assemble']['flag']:
+        if config['co_assemble']['enable']:
             result_df = pd.read_csv(config['root'] + '/workflow/config/co_assemble_list.csv')
             with open(output.file,'a') as f:
                 f.write(f'co_assembly {os.listdir(config["root"] + "/logs/co_assemble")} needed.\n')

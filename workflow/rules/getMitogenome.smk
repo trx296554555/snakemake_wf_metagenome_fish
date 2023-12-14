@@ -91,7 +91,8 @@ rule get_mitogenome:
     output:
         annotation=directory(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/mt_annotation"),
         assembly=directory(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/mt_assembly"),
-        res_dir=directory(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result")
+        res_dir=directory(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result"),
+        done=touch(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/mitogenome.done")
     message:
         "08: Use mitoZ to obtain the mitochondrial genome of the host from the host sequence ------------------------------------------"
     threads:
@@ -123,6 +124,7 @@ rule get_mitogenome:
 
 rule report_get_mitogenome:
     input:
+        done_files=expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/mitogenome.done", individual=get_run_individual()),
         res_dir=expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/{individual}.result", individual=get_run_individual()),
     output:
         get_mitogenome_report=config["root"] + "/" + config["folder"]["reports"] + "/03_get_mitogenome.report"

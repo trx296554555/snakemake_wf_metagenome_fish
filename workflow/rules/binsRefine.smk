@@ -34,7 +34,7 @@ rule gather_all_bins:
             "bin_refine"] + "/need_bins/" + "{sample}_bin.list",sample=get_run_sample()),
         co_assemble_bins=expand(config["root"] + "/" + config["folder"][
             "bin_refine"] + "/need_bins/" + "{item}_bin.list",item=get_co_item()) if config["co_assemble"][
-            "flag"] else [],
+            "enable"] else [],
     output:
         all_bins=directory(config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/"),
         gather_done=touch(config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done")

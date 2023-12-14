@@ -1,15 +1,39 @@
+# Workdir
 root: /home/user002/fish
-db_root: /home/user002/database
-db:
-    kraken2: k2_pluspf_20231009_db
-    humann_chocophlan: humann3_db/chocophlan-v31
-    humann_uniref: humann3_db/uniref
-    humann_utility_mapping: humann3_db/utility_mapping
-    metaphlan: metaphlan_databases
-envs: workflow/config/envs
-scripts: workflow/scripts
+# MetaInfo
 meta:
     sampleList: workflow/config/sampleList.csv
+    reads_length: 150
+# Modules: [rm_host, reads_classify, get_mitogenome, assemble_contigs, gene_prediction, reads_anno, co_assemble]
+reads_classify:
+    enable: True
+get_mitogenome:
+    enable: True
+assemble_contigs:
+    enable: True
+reads_anno:
+    huamnn3_enable: False
+    rgi_enable: False
+    dbcan_enable: False
+    vfdb_enable: False
+co_assemble:
+    enable: True
+    col: [Site_Group, Species_Group]
+    min_ctg_len: 1000
+# Database
+db_root: /home/user002/database
+db:
+    kraken2: kraken2_pluspf_20231009_db
+    humann_chocophlan: humann3_20231017_db/chocophlan-v31
+    humann_uniref: humann3_20231017_db/uniref
+    humann_utility_mapping: humann3_20231017_db/utility_mapping
+    metaphlan: metaphlan_20231214_db
+    vfdb: vf_20230915_db/VF_full_db.dmnd # core_db or VF_full_db
+    rgi: card_20231214_db
+    dbcan: dbcan_20231214_db
+# Folder
+envs: workflow/config/envs
+scripts: workflow/scripts
 folder:
     logs: logs
     reports: reports
@@ -24,14 +48,10 @@ folder:
     reads_anno_rgi: 06_reads_annotation/01_rgi
     reads_anno_dbcan: 06_reads_annotation/02_dbcan
     reads_anno_vfdb: 06_reads_annotation/03_vfdb
+    reads_gene_quant: 06_reads_annotation/04_gene_quant
     contigs_binning: 07_binning
     bin_refine: 08_bin_refine
     bin_quantify: 09_bin_quantify
     bin_anno_rgi: 10_bin_annotation/01_rgi
     bin_anno_dbcan: 10_bin_annotation/02_dbcan
     bin_anno_vfdb: 10_bin_annotation/03_vfdb
-reads_length: 150
-co_assemble:
-    flag: True
-    col: [Site_Group, Species_Group]
-    min_ctg_len: 1000
