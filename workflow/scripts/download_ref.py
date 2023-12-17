@@ -26,17 +26,6 @@ def download_ref_fa_file(ref_dict, db_dir):
 
 
 def ref_fa_file_md5_check(ref_dict, db_dir):
-    try:
-        with open(os.path.join(db_dir, 'md5_check.log'), 'r') as f:
-            for line in f:
-                line = line.split(':')
-                if 'OK' in line[1] or '成功' in line[1]:
-                    ref_dict.pop(line[0].split('.')[0], None)
-    except FileNotFoundError:
-        pass
-    if not ref_dict:
-        print('All ref files are downloaded successfully!')
-        return None
     for species in ref_dict:
         fna = f'{str(species).replace(" ", "_")}.fna.gz'
         md5 = f'{str(species).replace(" ", "_")}.fna.gz.md5'
@@ -54,3 +43,6 @@ def ref_fa_file_md5_check(ref_dict, db_dir):
         command = f'cd {db_dir} && md5sum -c {os.path.join(db_dir, md5)} >> {os.path.join(db_dir, "md5_check.log")}'
         if subprocess.check_output(command, shell=True, executable="/bin/bash", text=True):
             raise Exception(f'{fna} is not downloaded successfully!')
+    print('All ref files are downloaded successfully!')
+    with open(os.path.join(db_dir, "all_md5.pass"), 'w') as f:
+        f.write('All md5 check passed!')
