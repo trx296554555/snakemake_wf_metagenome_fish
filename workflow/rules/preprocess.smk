@@ -155,7 +155,7 @@ rule check_md5:
     message:
         "02: Verifying the MD5 checksum of FASTQ files for processing samples ------------------------------------------"
     shell:
-        "cd `dirname {input}` && md5sum -c {input} > {output} || true "
+        "cd `dirname {input}` && md5sum -c {input} > {output}"
 
 
 rule check_sample:
@@ -168,25 +168,10 @@ rule check_sample:
     message:
         "01: Checking which samples need processing ------------------------------------------"
     run:
-        data_root = config["root"] + "/" + config["folder"]["data"]
-        if not os.path.exists(os.path.join(data_root,'md5_error_sample')):
-            os.mkdir(os.path.join(data_root,'md5_error_sample'))
-        for i in input.md5:
-            dir_name = os.path.basename(i).replace('_check_md5.log','')
-            with open(i,'r') as f:
-                if 'FAILED' in f.read() or '失败' in f.read():
-                    try:
-                        shutil.move(os.path.join(data_root,dir_name),
-                            os.path.join(data_root,'md5_error_sample',dir_name))
-                    except FileNotFoundError:
-                        print(f'Dir {dir_name} not found, maybe it has been moved.')
-        md5_err_sample = os.listdir(os.path.join(data_root,'md5_error_sample'))
         with open(output.file,'w') as f:
             f.write(f'Run sample num: {len(get_run_sample())}\n')
             f.write(f'Run samples:\n')
             f.write("\n".join(get_run_sample()) + "\n\n")
-            f.write(f'MD5 error sample num: {len(md5_err_sample)}\n')
-            f.write(f'MD5 error samples: {md5_err_sample}\n\n')
 
         if config['co_assemble']['enable']:
             result_df = pd.read_csv(config['root'] + '/workflow/config/co_assemble_list.csv')
