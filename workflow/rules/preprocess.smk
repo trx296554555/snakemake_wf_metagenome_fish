@@ -133,12 +133,20 @@ def check_all_sample():
             file_list += change_name(os.path.join(data_root,dir_))
 
     # 预先检测宿主基因组是否存在，不存在则下载
+    need_download = False
     download_df = all_sample_df.drop_duplicates(subset='Download_link')
     download_dict = dict(zip(download_df['Ref'],download_df['Download_link']))
-    # Download reference genome
-    download_ref_fa_file(download_dict,config["root"] + "/" + config["folder"]["index"])
-    # Check reference genome md5
-    ref_fa_file_md5_check(download_dict,config["root"] + "/" + config["folder"]["index"])
+    for key in download_dict:
+        if not os.path.exists(config["root"] + "/" + config["folder"]["index"] + "/" + key + '_bowtie2_index'):
+            need_download = True
+    if need_download:
+        print("Downloading reference genome...")
+        # Download reference genome
+        download_ref_fa_file(download_dict,config["root"] + "/" + config["folder"]["index"])
+        # Check reference genome md5
+        ref_fa_file_md5_check(download_dict,config["root"] + "/" + config["folder"]["index"])
+    else:
+        print("Reference genome index already exists, skip download.")
     return file_list
 
 
