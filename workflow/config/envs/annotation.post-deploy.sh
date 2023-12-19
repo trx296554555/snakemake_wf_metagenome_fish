@@ -2,13 +2,14 @@ root_path=$(dirname `dirname \`dirname "$CONDA_PREFIX"_\``)
 env_name=$(basename $CONDA_PREFIX)
 config_path="${root_path}"/workflow/config
 db_root=$(awk -F ': ' '/db_root:/{print $2}' "${config_path}"/config.yaml)
-dbcan_db=$(awk -F ': ' '/dbcan:/{print $2}' "${config_path}"/config.yaml)
-card_db=$(awk -F ': ' '/rgi:/{print $2}' "${config_path}"/config.yaml)
+dbcan_db=$(awk -F ': ' '/    dbcan:/{print $2}' "${config_path}"/config.yaml)
+card_db=$(awk -F ': ' '/    rgi:/{print $2}' "${config_path}"/config.yaml)
+vfdb_db=$(awk -F ': ' '/    vfdb:/{print $2}' "${config_path}"/config.yaml)
 # 使用 dbcan rgi vfdb 对预测的蛋白质进行功能注释
 
 {
   echo "Make additional adjustments for the post-deployment of the Conda environment ${env_name} (annotation)"
-  echo "Binning the assembled Contigs using Metabat2 Concoct MaxBin2."
+  echo "Annotation the assembled Contigs using dbcan rgi vfdb."
   echo "---------------------------"
 } >> "${root_path}"/logs/env.log
 
@@ -39,6 +40,7 @@ cat >> "${root_path}"/logs/env.log <<EOF
   && wget http://bcb.unl.edu/dbCAN2/download/Samples/EscheriaColiK12MG1655.gff
   ------------------------------------------------------------
 EOF
+exit 1
 fi
 
 # Check whether the card database already exists
@@ -93,10 +95,11 @@ cat >> "${root_path}"/logs/env.log <<EOF
     --kmer_size 61
     ------------------------------------------------------------
 EOF
+exit 1
 fi
 
 # Check whether the vfdb database already exists
-if [ -d "${db_root}"/"${vfdb_db}" ];then
+if [ -f "${db_root}"/"${vfdb_db}" ];then
   echo "The vfdb database already exists, location：${db_root}/${vfdb_db}" >> "${root_path}"/logs/env.log
   echo "But diamond need a perfectly matched version of the database, so check version and rebuild the db if error occurs" >> "${root_path}"/logs/env.log
 else
@@ -114,4 +117,5 @@ cat >> "${root_path}"/logs/env.log <<EOF
     diamond makedb --in VFDB_setB_pro.fas -d VF_full_db
     ------------------------------------------------------------
 EOF
+exit 1
 fi
