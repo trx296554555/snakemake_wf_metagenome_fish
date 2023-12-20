@@ -1,26 +1,29 @@
 # 鱼类宏基因组分析流程 workflow by snakemake
 ---
 
-## Prepare Data and Database
+## Init Environment 
 
 ```shell
-cd /tmp_disk
-cp Mambaforge-23.3.1-1-Linux-x86_64.sh ~
-for i in `cat wukong_list.txt`;do cp -r 00_cleandata/$i /data/sas-2-15t/fish/00_cleandata;done
-cp -r ref_db /home/user003/fish
-cp -r database /data-1
-chown -R user003:user003 /data/sas-2-15t/fish
-```
-
-## Init
-
-```shell
-cd YOUR_WORK_PATH
+YOUR_WORK_PATH=/home/user003/fish
+REAL_LOCATION=/data/sas-2-15t/fish
+mkdir -p ${REAL_LOCATION} && ln -s ${REAL_LOCATION} ${YOUR_WORK_PATH}
+cd ${YOUR_WORK_PATH}
+# http的方式连接失败可以尝试使用ssh的方式 https://www.cnblogs.com/zxtceq/p/14037175.html
 git clone https://github.com/trx296554555/snakemake_wf_metagenome_fish.git
 ln -s snakemake_wf_metagenome_fish/workflow/
 bash workflow/prepare.sh
 source ~/.bashrc
 # edit config.yaml by yourself
+```
+
+## Prepare Data and Database
+
+```shell
+cp /tmp_disk/Mambaforge-23.3.1-1-Linux-x86_64.sh ~
+cp -r -n /tmp_disk/ref_db ${YOUR_WORK_PATH}
+cp -r -n /tmp_disk/database $(dirname ${REAL_LOCATION}) && ln -s $(dirname ${REAL_LOCATION})/database ~
+cd ${YOUR_WORK_PATH}/workflow/scripts && python prepare_sampleList.py $(hostname)
+for i in $(tail -n +2 ${YOUR_WORK_PATH}/workflow/config/sampleList.csv | cut -f2 -d ,); do cp -r -n /tmp_disk/00_cleandata/$i ${YOUR_WORK_PATH}/00_cleandata/;done && chown -R user003:user003 ${YOUR_WORK_PATH}/00_cleandata/
 ```
 
 ## Update
@@ -32,11 +35,12 @@ git pull
 ## Run
 
 ```shell
-cd YOUR_WORK_PATH
+screen -S fish
+cd ${YOUR_WORK_PATH}
 conda activate snakemake
 snakemake -c12 --use-conda --conda-create-envs-only
 snakemake -c96 --use-conda -np
-nohup snakemake -c96 --use-conda &
+ctrl + a + d
 ```
 
 ---
@@ -59,3 +63,7 @@ nohup snakemake -c96 --use-conda &
 # 文件和目录是名词+动词的形式，如：readsClassify
 
 # rule 是动词+名词的形式，如：classify_reads
+
+## 
+# TODO 这里以后可能会更新，这是run_dbcan推荐的数据库更新了，但是代码没更新的原因
+ln -s "${db_root}"/"${dbcan_db}"/fam-substrate-mapping-08012023.tsv "${db_root}"/"${dbcan_db}"/fam-substrate-mapping-08252022.tsv

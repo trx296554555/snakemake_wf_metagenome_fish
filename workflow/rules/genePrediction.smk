@@ -30,9 +30,11 @@ rule predict_coding_genes:
         seqkit stats -T {output.proteins} > {log}
         """
 
+
 rule pruning_redundancy:
     input:
         genes=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.gene.fa",
+        proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.faa",
     output:
         genes=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.gene.prune.fa",
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
@@ -41,9 +43,7 @@ rule pruning_redundancy:
     conda:
         config["root"] + "/" + config["envs"] + "/" + "prediction.yaml"
     threads:
-        12
-    params:
-        tmp=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/tmp2",
+        6
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["gene_prediction"] + "/{sample}.log"
     log:
@@ -51,15 +51,8 @@ rule pruning_redundancy:
     shell:
         """
         cd-hit-est -T {threads} -M 0 -i {input.genes} -o {output.genes} -c 0.95 -aS 0.9 -g 1 -sc 1 -sf 1 -d 0 > /dev/null 2>&1
-        mkdir -p {params.tmp}
-        seqkit split -p {threads} {output.genes} -O {params.tmp} > /dev/null 2>&1
-        for i in {params.tmp}/*.fa; do
-            prodigal -i $i -d $i.genes -a $i.proteins -p meta -m -q > /dev/null 2>&1 &
-        done
-        wait
-        cat {params.tmp}/*.proteins > {output.proteins}
+        seqkit seq -n {output.genes} |seqkit grep -n -f - {input.proteins} > {output.proteins}
         sed -i 's/*//g' {output.proteins}
-        rm -rf {params.tmp}
         seqkit stats -T {output.proteins} > {log}
         """
 

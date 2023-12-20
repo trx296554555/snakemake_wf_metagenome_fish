@@ -44,6 +44,9 @@ rule gather_all_bins:
         for eachbins in {input.sample_bins}; do
             cat $eachbins | xargs -I {{}} ln -s {{}} {output.all_bins}
         done
+        for eachbins in {input.co_assemble_bins}; do
+            cat $eachbins | xargs -I {{}} ln -s {{}} {output.all_bins}
+        done
         """
 
     # rule dereplicate_bins:cat {input.bins} | xargs -I {{}} ln -s {{}} {output.all_bins}

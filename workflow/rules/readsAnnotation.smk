@@ -124,7 +124,6 @@ rule generate_dbcan_report:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
         expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
     output:
-        opt_dir=directory(config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}"),
         dbcan_anno=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.anno",
         dbcan_tsv=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.tsv"
     message:
@@ -137,6 +136,7 @@ rule generate_dbcan_report:
         # tools: choose from 'hmmer', 'diamond', 'dbcansub', 'all';
         # use two or more tools, use ' ' to separate them, for example: tools="hmmer diamond"
         # dbcansub will take a lot of space uncontrolled, use with caution
+        opt_dir = config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}",
         tools="all",
         db=config["db_root"] + "/" + config["db"]["dbcan"],
         type="protein",
@@ -147,10 +147,11 @@ rule generate_dbcan_report:
         config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.log"
     shell:
         """
-        run_dbcan {input.proteins} {params.type} --out_dir {output.opt_dir} --out_pre {wildcards.sample}_ \
+        run_dbcan {input.proteins} {params.type} --out_dir {params.opt_dir} --out_pre {wildcards.sample}_ \
         --hmm_cpu {threads} --dia_cpu {threads} --tf_cpu {threads} --stp_cpu {threads} -dt {threads} \
         --db_dir {params.db} --tools {params.tools} > {log} 2>&1
-        mv {output.opt_dir}/{wildcards.sample}_overview.txt {output.dbcan_anno}
+        mv {params.opt_dir}/{wildcards.sample}_overview.txt {output.dbcan_anno}
+        python {params.script} -q {input.expression} -a {output.dbcan_anno} -t dbcan -o {output.dbcan_tsv}
         """
 
 
@@ -171,49 +172,61 @@ rule generate_dbcan_report:
 #         """
 
 
-rule run_rgi:
+rule generate_rgi_report:
     input:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
+        expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
     output:
-        opt=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}_rgi.txt"
+        rgi_anno=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.anno",
+        rgi_tsv=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.tsv"
     message:
         "12 : Run rgi to generate ARGs annotation -------------------------"
     conda:
         config["root"] + "/" + config["envs"] + "/" + "annotation.yaml"
     threads:
-        24
+        12
     params:
-        opt_prefix=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}",
         # alignment tool: choose from 'diamond', 'blast'
-        tool="diamond",
+        tool = "diamond",
+        opt_prefix=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}",
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["reads_anno_rgi"] + "/{sample}.rgi.log"
     log:
         config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.log"
     shell:
         """
         rgi main -i {input.proteins} -o {params.opt_prefix} \
-        -t protein -a {params.tool} -n {threads} --clean --debug --include_loose 2>&1 > {log}
+        -t protein -a {params.tool} -n {threads} --clean --debug --include_loose > {log} 2>&1
         rm -rf {params.opt_prefix}.json
-        mv {params.opt_prefix}.txt {output.opt}
+        mv {params.opt_prefix}.txt {output.rgi_anno}
+        python {params.script} -q {input.expression} -a {output.rgi_anno} -t rgi -o {output.rgi_tsv}
         """
 
 
-rule run_vfdb:
+rule generate_vfdb_report:
     input:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
+        expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
     output:
-        opt=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}_vfdb.txt"
+        vfdb_anno=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.anno",
+        vfdb_tsv=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.tsv"
     message:
         "12 : Run vfdb to generate virulence factors annotation -------------------------"
     conda:
         config["root"] + "/" + config["envs"] + "/" + "annotation.yaml"
     threads:
-        24
+        12
     params:
         db=config["db_root"] + "/" + config["db"]["vfdb"],
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["reads_anno_vfdb"] + "/{sample}.vfdb.log"
     log:
         config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.log"
     shell:
         """
-        diamond blastp -d {params.db} -q {input.proteins} -o {output.opt}/{wildcards.sample}.diamond.out \
-        -f 6 -p {threads} --id 80% --query-cover 70% --evalue 1e-3 2>&1 > {log}
+        diamond blastp -d {params.db} -q {input.proteins} -o {output.vfdb_anno} \
+        -f 6 -p {threads} --id 80% --query-cover 70% --evalue 1e-5 > {log} 2>&1
+        python {params.script} -q {input.expression} -a {output.vfdb_anno} -t vfdb -o {output.vfdb_tsv}
         """

@@ -32,7 +32,10 @@ rule all:
         # config["root"] + "/" + config["folder"]["reports"] + "/05_gene_prediction.report" if config["gene_prediction"]["enable"] else "",
         # expand(config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/{sample}/{sample}_genefamilies.tsv", sample=get_run_sample()),
         config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies.tsv",
+        # expand(config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf", sample=get_run_sample()),ls
         expand(config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.anno", sample=get_run_sample()),
+        expand(config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.anno", sample=get_run_sample()),
+        expand(config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.anno", sample=get_run_sample()),
         # config["root"] + "/" + config["folder"]["reports"] + "/06_reads_anno_humman3.report" if config["reads_anno"]["huamnn3_enable"] else "",
         # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins", sample=get_run_sample()),
         # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_bins", sample=get_run_sample()),
