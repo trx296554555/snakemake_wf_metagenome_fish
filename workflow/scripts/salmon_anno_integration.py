@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import re
 import math
 import argparse
@@ -61,7 +62,7 @@ def read_rgi_file(rgi_file, dict_info):
     with open(rgi_file, 'r', errors='ignore') as ipt:
         for line in ipt:
             line = line.strip().split('\t')
-            if line[5] == 'Strict':  # TODO 严格模式还是宽松模式
+            if line[5]:  # TODO 严格模式还是宽松模式  == 'Strict'
                 orf_id = line[0].split(' ')[0]
                 rgi_id = line[8]
                 if orf_id in dict_info:
@@ -122,5 +123,6 @@ if __name__ == '__main__':
     anno_quant_dict = read_anno_file(args.a_file, args.anno_type, counts_info)
 
     with open(args.o_file, 'w', errors='ignore') as output:
+        output.writelines('Sample\t' + os.path.basename(args.q_file).split('.')[0] + '\n')
         for value in anno_quant_dict.values():
             output.writelines('\t'.join(value) + '\n')

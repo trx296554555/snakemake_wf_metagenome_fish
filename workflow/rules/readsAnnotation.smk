@@ -48,9 +48,7 @@ rule merge_humann3_report:
         ko_tsv=config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_ko.tsv",
         go_tsv=config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_go.tsv",
     message:
-        "12.2: Merge humann3 results -------------------------"
-    threads:
-        1
+        "12.2: Merge humann3 reports -------------------------"
     params:
         res_dir=directory(config["root"] + "/" + config["folder"]["reads_anno_humann3"])
     log:
@@ -119,77 +117,21 @@ rule quantify_gene_expression:
         """
 
 
-rule generate_dbcan_report:
+rule get_rgi_annotation:
     input:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
-        expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
-    output:
-        dbcan_anno=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.anno",
-        dbcan_tsv=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.tsv"
-    message:
-        "12.5: Run dbcan to generate CAZy annotation -------------------------"
-    conda:
-        config["root"] + "/" + config["envs"] + "/" + "annotation.yaml"
-    threads:
-        12
-    params:
-        # tools: choose from 'hmmer', 'diamond', 'dbcansub', 'all';
-        # use two or more tools, use ' ' to separate them, for example: tools="hmmer diamond"
-        # dbcansub will take a lot of space uncontrolled, use with caution
-        opt_dir = config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}",
-        tools="all",
-        db=config["db_root"] + "/" + config["db"]["dbcan"],
-        type="protein",
-        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
-    benchmark:
-        config["root"] + "/benchmark/" + config["folder"]["reads_anno_dbcan"] + "/{sample}.dbcan.log"
-    log:
-        config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.log"
-    shell:
-        """
-        run_dbcan {input.proteins} {params.type} --out_dir {params.opt_dir} --out_pre {wildcards.sample}_ \
-        --hmm_cpu {threads} --dia_cpu {threads} --tf_cpu {threads} --stp_cpu {threads} -dt {threads} \
-        --db_dir {params.db} --tools {params.tools} > {log} 2>&1
-        mv {params.opt_dir}/{wildcards.sample}_overview.txt {output.dbcan_anno}
-        python {params.script} -q {input.expression} -a {output.dbcan_anno} -t dbcan -o {output.dbcan_tsv}
-        """
-
-
-# rule dbcan_merge:
-#     input:
-#         gather_dbcan_report
-#     output:
-#         config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.done"
-#     message:
-#         "12 : Merge dbcan reports -------------------------"
-#     params:
-#         dir=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/results"
-#     shell:
-#         """
-#         mkdir -p {params.dir}
-#         mv {input} {params.dir}
-#         touch {output}
-#         """
-
-
-rule generate_rgi_report:
-    input:
-        proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
-        expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
     output:
         rgi_anno=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.anno",
-        rgi_tsv=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.tsv"
     message:
-        "12 : Run rgi to generate ARGs annotation -------------------------"
+        "12.5: Run rgi to get ARGs annotation -------------------------"
     conda:
-        config["root"] + "/" + config["envs"] + "/" + "annotation.yaml"
+        config["root"] + "/" + config["envs"] + "/" + "rgi.yaml"
     threads:
         12
     params:
         # alignment tool: choose from 'diamond', 'blast'
-        tool = "diamond",
+        tool="diamond",
         opt_prefix=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}",
-        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["reads_anno_rgi"] + "/{sample}.rgi.log"
     log:
@@ -200,26 +142,118 @@ rule generate_rgi_report:
         -t protein -a {params.tool} -n {threads} --clean --debug --include_loose > {log} 2>&1
         rm -rf {params.opt_prefix}.json
         mv {params.opt_prefix}.txt {output.rgi_anno}
-        python {params.script} -q {input.expression} -a {output.rgi_anno} -t rgi -o {output.rgi_tsv}
         """
 
 
-rule generate_vfdb_report:
+rule generate_rgi_report:
     input:
-        proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
+        rgi_anno=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.anno",
         expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
     output:
-        vfdb_anno=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.anno",
-        vfdb_tsv=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.tsv"
+        rgi_tsv=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.tsv"
     message:
-        "12 : Run vfdb to generate virulence factors annotation -------------------------"
+        "12.6: Combine quantification and annotation results to generate rgi reports------------------------"
+    params:
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    shell:
+        """
+        python {params.script} -q {input.expression} -a {input.rgi_anno} -t rgi -o {output.rgi_tsv}
+        """
+
+
+rule merge_rgi_report:
+    input:
+        all_rgi_tsv=expand(config["root"] + "/" + config["folder"][
+            "reads_anno_rgi"] + "/{sample}/{sample}.rgi.tsv",sample=get_run_sample()),
+    output:
+        merge_rgi_tsv=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/all.rgi.tsv",
+    message:
+        "12.7: Merge rgi reports -------------------------"
+    params:
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    shell:
+        """
+        python {params.script} -a {input.all_rgi_tsv} -t rgi -o {output.merge_rgi_tsv}
+        """
+
+
+rule get_dbcan_annotation:
+    input:
+        proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
+    output:
+        dbcan_anno=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.anno",
+    message:
+        "12.8: Run dbcan to get CAZy annotation -------------------------"
     conda:
-        config["root"] + "/" + config["envs"] + "/" + "annotation.yaml"
+        config["root"] + "/" + config["envs"] + "/" + "dbcan4.yaml"
+    threads:
+        12
+    params:
+        # tools: choose from 'hmmer', 'diamond', 'dbcansub', 'all';
+        # use two or more tools, use ' ' to separate them, for example: tools="hmmer diamond"
+        # dbcansub will take a lot of space uncontrolled, use with caution
+        opt_dir=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}",
+        tools="all",
+        db=config["db_root"] + "/" + config["db"]["dbcan"],
+        type="protein",
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["reads_anno_dbcan"] + "/{sample}.dbcan.log"
+    log:
+        config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.log"
+    shell:
+        """
+        run_dbcan {input.proteins} {params.type} --out_dir {params.opt_dir} --out_pre {wildcards.sample}_ \
+        --hmm_cpu {threads} --dia_cpu {threads} --tf_cpu {threads} --stp_cpu {threads} -dt {threads} \
+        --db_dir {params.db} --tools {params.tools} > {log} 2>&1
+        mv {params.opt_dir}/{wildcards.sample}_overview.txt {output.dbcan_anno}
+        """
+
+
+rule generate_dbcan_report:
+    input:
+        dbcan_anno=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.anno",
+        expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
+    output:
+        dbcan_tsv=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.tsv"
+    message:
+        "12.9: Combine quantification and annotation results to generate dbcan reports------------------------"
+    params:
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    shell:
+        """
+        python {params.script} -q {input.expression} -a {input.dbcan_anno} -t dbcan -o {output.dbcan_tsv}
+        """
+
+
+rule merge_dbcan_report:
+    input:
+        all_dbcan_tsv=expand(config["root"] + "/" + config["folder"][
+            "reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.tsv",sample=get_run_sample()),
+    output:
+        merge_dbcan_tsv=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/all.dbcan.tsv",
+    message:
+        "12.10: Merge dbcan reports -------------------------"
+    params:
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    shell:
+        """
+        python {params.script} -a {input.all_dbcan_tsv} -t dbcan -o {output.merge_dbcan_tsv}
+        """
+
+
+rule get_vfdb_annotation:
+    input:
+        proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
+    output:
+        vfdb_anno=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.anno",
+    message:
+        "12.11: Run vfdb to generate virulence factors annotation -------------------------"
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "dbcan4.yaml"
     threads:
         12
     params:
         db=config["db_root"] + "/" + config["db"]["vfdb"],
-        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["reads_anno_vfdb"] + "/{sample}.vfdb.log"
     log:
@@ -228,5 +262,36 @@ rule generate_vfdb_report:
         """
         diamond blastp -d {params.db} -q {input.proteins} -o {output.vfdb_anno} \
         -f 6 -p {threads} --id 80% --query-cover 70% --evalue 1e-5 > {log} 2>&1
-        python {params.script} -q {input.expression} -a {output.vfdb_anno} -t vfdb -o {output.vfdb_tsv}
+        """
+
+
+rule generate_vfdb_report:
+    input:
+        vfdb_anno=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.anno",
+        expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
+    output:
+        vfdb_tsv=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.tsv"
+    message:
+        "12.12: Combine quantification and annotation results to generate vfdb reports------------------------"
+    params:
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    shell:
+        """
+        python {params.script} -q {input.expression} -a {input.vfdb_anno} -t vfdb -o {output.vfdb_tsv}
+        """
+
+
+rule merge_vfdb_report:
+    input:
+        all_vfdb_tsv=expand(config["root"] + "/" + config["folder"][
+            "reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.tsv",sample=get_run_sample()),
+    output:
+        merge_vfdb_tsv=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/all.vfdb.tsv",
+    message:
+        "12.13: Merge vfdb reports -------------------------"
+    params:
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    shell:
+        """
+        python {params.script} -a {input.all_vfdb_tsv} -t vfdb -o {output.merge_vfdb_tsv}
         """

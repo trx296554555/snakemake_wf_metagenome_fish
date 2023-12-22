@@ -1,4 +1,4 @@
-name: annotation
+name: rgi
 channels:
   - bioconda
   - defaults
@@ -33,7 +33,7 @@ dependencies:
   - brotlipy=0.7.0=py38h01eb140_1006
   - bwa=0.7.17=he4a0461_11
   - bzip2=1.0.8=hd590300_5
-  - c-ares=1.23.0=hd590300_0
+  - c-ares=1.24.0=hd590300_0
   - ca-certificates=2023.11.17=hbcca054_0
   - certifi=2023.11.17=pyhd8ed1ab_0
   - cffi=1.14.4=py38ha312104_0
@@ -47,19 +47,17 @@ dependencies:
   - cytoolz=0.12.2=py38h01eb140_1
   - dask=2023.5.0=pyhd8ed1ab_0
   - dask-core=2023.5.0=pyhd8ed1ab_0
-  - dbcan=4.0.0=pyh7cba7a3_0
   - diamond=0.8.36=h43eeafb_7
   - distributed=2023.5.0=pyhd8ed1ab_0
   - entrez-direct=16.2=he881be0_1
   - filetype=1.2.0=pyhd8ed1ab_0
-  - fonttools=4.46.0=py38h01eb140_0
+  - fonttools=4.47.0=py38h01eb140_0
   - freetype=2.12.1=h267a509_2
-  - fsspec=2023.12.1=pyhca7485f_0
+  - fsspec=2023.12.2=pyhca7485f_0
   - gettext=0.21.1=h27087fc_0
   - gflags=2.2.2=he1b5a44_1004
   - giflib=5.2.1=h0b41bf4_3
   - glog=0.6.0=h6f12383_0
-  - hmmer=3.4=hdbdd923_0
   - htslib=1.9=h244ad75_9
   - icu=70.1=h27087fc_0
   - idna=2.10=pyh9f0ad1d_0
@@ -98,7 +96,7 @@ dependencies:
   - libgoogle-cloud=2.5.0=h5d50b59_1
   - libgrpc=1.51.1=h05bd8bd_0
   - libhwloc=2.8.0=h32351e8_1
-  - libiconv=1.17=hd590300_1
+  - libiconv=1.17=hd590300_2
   - libidn2=2.3.4=h166bdaf_0
   - liblapack=3.9.0=20_linux64_openblas
   - libnghttp2=1.51.0=hdcd2b5c_0
@@ -127,8 +125,7 @@ dependencies:
   - matplotlib-base=3.7.3=py38h58ed7fa_0
   - msgpack-python=1.0.7=py38h7f3f72f_0
   - munkres=1.0.7=py_1
-  - natsort=8.4.0=pyhd8ed1ab_0
-  - ncbi-vdb=3.0.9=hdbdd923_0
+  - ncbi-vdb=3.0.10=hdbdd923_0
   - ncurses=6.1=hf484d3e_1002
   - numpy=1.24.4=py38h59b608b_0
   - oligoarrayaux=3.8=hc9558a2_0
@@ -187,11 +184,11 @@ dependencies:
   - perl-xml-sax=1.02=pl5321hdfd78af_1
   - perl-xml-sax-base=1.09=pl5321hdfd78af_1
   - pillow=9.1.1=py38h0ee0e06_1
-  - pip=23.3.1=pyhd8ed1ab_0
+  - pip=23.3.2=pyhd8ed1ab_0
   - platformdirs=4.1.0=pyhd8ed1ab_0
   - pooch=1.8.0=pyhd8ed1ab_0
   - prodigal=2.6.3=h031d066_6
-  - psutil=5.9.5=py38h01eb140_1
+  - psutil=5.9.7=py38h01eb140_0
   - pthread-stubs=0.4=h36c2ea0_1001
   - pyahocorasick=2.0.0=py38h01eb140_1
   - pyarrow=10.0.1=py38hf54eea0_4_cpu
@@ -224,7 +221,7 @@ dependencies:
   - sortedcontainers=2.4.0=pyhd8ed1ab_0
   - soupsieve=2.5=pyhd8ed1ab_1
   - sqlite=3.40.1=h5082296_0
-  - statsmodels=0.14.0=py38h7f0c24c_3
+  - statsmodels=0.14.1=py38h7f0c24c_0
   - tbb=2021.7.0=h924138e_1
   - tblib=3.0.0=pyhd8ed1ab_0
   - tk=8.6.13=noxft_h4845f30_101
