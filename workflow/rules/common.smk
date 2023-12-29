@@ -84,7 +84,6 @@ def get_report():
             "enable"] else "",
         config["root"] + "/" + config["folder"]["reports"] + "/06_reads_annotation.report" if reads_anno_enable else "",
         config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done",
-        config["root"] + "/" + config["folder"]["bin_refine"] + "/test/hhh"
         # TODO 需要一个清理中间文件的rule 在工作流结束后运行
     ]
     report_list = [i for i in report_list if i != ""]
