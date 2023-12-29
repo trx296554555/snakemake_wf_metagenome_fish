@@ -1,3 +1,7 @@
+import os
+import shutil
+import pandas as pd
+
 rule generate_humann3_report:
     input:
         fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
@@ -47,6 +51,13 @@ rule merge_humann3_report:
         rxn_tsv=config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_rxn.tsv",
         ko_tsv=config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_ko.tsv",
         go_tsv=config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_go.tsv",
+        clean_merge_gf_tsv=config["root"] + "/" + config["folder"][
+            "reads_anno_humann3"] + "/all_genefamilies_clean.tsv",
+        clean_merge_path_abd_tsv=config["root"] + "/" + config["folder"][
+            "reads_anno_humann3"] + "/all_pathabundance_clean.tsv",
+        clean_rxn_tsv=config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_rxn_clean.tsv",
+        clean_ko_tsv=config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_ko_clean.tsv",
+        clean_go_tsv=config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_go_clean.tsv",
     message:
         "12.2: Merge humann3 reports -------------------------"
     params:
@@ -64,6 +75,11 @@ rule merge_humann3_report:
         humann_regroup_table -i {output.merge_gf_tsv} -o {output.rxn_tsv} --groups uniref90_rxn 2>&1 >> {log} 2>&1
         humann_regroup_table -i {output.merge_gf_tsv} -o {output.ko_tsv} --groups uniref90_ko 2>&1 >> {log} 2>&1
         humann_regroup_table -i {output.merge_gf_tsv} -o {output.go_tsv} --groups uniref90_go 2>&1 >> {log} 2>&1
+        grep -v '|' {output.merge_gf_tsv} > {output.clean_merge_gf_tsv}
+        grep -v '|' {output.merge_path_abd_tsv} > {output.clean_merge_path_abd_tsv}
+        grep -v '|' {output.rxn_tsv} > {output.clean_rxn_tsv}
+        grep -v '|' {output.ko_tsv} > {output.clean_ko_tsv}
+        grep -v '|' {output.go_tsv} > {output.clean_go_tsv}
         """
 
 
@@ -170,10 +186,14 @@ rule merge_rgi_report:
     message:
         "12.7: Merge rgi reports -------------------------"
     params:
-        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+        script=config["root"] + "/workflow/scripts/join_tables.py",
+        tmp_dir=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/tmp"
     shell:
         """
-        python {params.script} -a {input.all_rgi_tsv} -t rgi -o {output.merge_rgi_tsv}
+        mkdir -p {params.tmp_dir}
+        for res in {input.all_rgi_tsv}; do ln -sf $res {params.tmp_dir}; done
+        python {params.script} -i {params.tmp_dir} -o {output.merge_rgi_tsv}
+        rm -rf {params.tmp_dir}
         """
 
 
@@ -234,10 +254,14 @@ rule merge_dbcan_report:
     message:
         "12.10: Merge dbcan reports -------------------------"
     params:
-        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+        script=config["root"] + "/workflow/scripts/join_tables.py",
+        tmp_dir=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/tmp"
     shell:
         """
-        python {params.script} -a {input.all_dbcan_tsv} -t dbcan -o {output.merge_dbcan_tsv}
+        mkdir -p {params.tmp_dir}
+        for res in {input.all_dbcan_tsv}; do ln -sf $res {params.tmp_dir}; done
+        python {params.script} -i {params.tmp_dir} -o {output.merge_dbcan_tsv}
+        rm -rf {params.tmp_dir}
         """
 
 
@@ -290,8 +314,83 @@ rule merge_vfdb_report:
     message:
         "12.13: Merge vfdb reports -------------------------"
     params:
-        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+        script=config["root"] + "/workflow/scripts/join_tables.py",
+        tmp_dir=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/tmp"
     shell:
         """
-        python {params.script} -a {input.all_vfdb_tsv} -t vfdb -o {output.merge_vfdb_tsv}
+        mkdir -p {params.tmp_dir}
+        for res in {input.all_vfdb_tsv}; do ln -sf $res {params.tmp_dir}; done
+        python {params.script} -i {params.tmp_dir} -o {output.merge_vfdb_tsv}
+        rm -rf {params.tmp_dir}
         """
+
+
+def get_annotation_res():
+    anno_res = {}
+    if config["reads_anno"]["huamnn3_enable"]:
+        anno_res['humann3'] = [
+            config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_pathabundance_clean.tsv",
+            config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_rxn_clean.tsv",
+            config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_ko_clean.tsv",
+            config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies_go_clean.tsv",
+            ]
+    if config["reads_anno"]["rgi_enable"]:
+        anno_res['rgi'] = config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/all.rgi.tsv"
+    if config["reads_anno"]["dbcan_enable"]:
+        anno_res['dbcan'] = config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/all.dbcan.tsv"
+    if config["reads_anno"]["vfdb_enable"]:
+        anno_res['vfdb'] = config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/all.vfdb.tsv"
+    return anno_res
+
+
+rule report_reads_annotation:
+    input:
+        **get_annotation_res()
+    output:
+        config["root"] + "/" + config["folder"]["reports"] + "/06_reads_annotation.report"
+    run:
+        anno_info_path = config["root"] + "/" + config["folder"]["reports"] + "/06_annotation_info"
+        info_dict = {
+            'humann3': config["db_root"] + "/" + config["db"][
+                "humann_chocophlan"] + "/../metacyc_pathway-2023-06-27_clean.csv",
+            'rgi': config["db_root"] + "/" + config["db"]["rgi"] + "/rgi_card_info.zip",
+            'dbcan': config["db_root"] + "/" + config["db"]["dbcan"] + "/fam-substrate-mapping-08012023.tsv",
+            'vfdb': config["db_root"] + "/" + config["db"]["vfdb"] + "/core_dataset/core_pro_info.txt"
+        }
+
+
+        def statistical_other_res(input_file, db_name):
+            df = pd.read_csv(input_file,sep="\t",index_col=0)
+            tpm = str(db_name + "_anno_total_TPM")
+            num = str(db_name + "_anno_term_num")
+            tmp_df = pd.DataFrame()
+            tmp_df[tpm] = df.sum(axis=0).round(6)
+            tmp_df[num] = df.apply(lambda x: len(x[x > 0]),axis=0)
+            return tmp_df.T
+
+        def statistical_humann_res(input_file, db_name):
+            df = pd.read_csv(input_file,sep="\t",index_col=0)
+            unclassified = str(db_name + "_unclassified_COUNT")
+            count = str(db_name + "_anno_total_COUNT")
+            num = str(db_name + "_anno_term_num")
+            tmp_df = pd.DataFrame()
+            tmp_df[unclassified] = pd.DataFrame(df.iloc[0:2].sum(axis=0).round(6))
+            tmp_df[count] = pd.DataFrame(df.iloc[2:].sum(axis=0).round(6))
+            tmp_df[num] = df.apply(lambda x: len(x[x > 0]) - 2,axis=0)
+            return tmp_df.T
+
+
+        if not os.path.exists(anno_info_path):
+            os.makedirs(anno_info_path)
+        res_df = pd.DataFrame()
+        for db in input.keys():
+            shutil.copy(info_dict[db], anno_info_path)
+            if db == "humann3":
+                for i in input[db]:
+                    sub_db = os.path.basename(i).replace("_clean.tsv","").replace("all_","")
+                    df_stat = statistical_humann_res(i,sub_db)
+                    res_df = pd.concat([res_df, df_stat],axis=0)
+            else:
+                df_stat = statistical_other_res(input[db], db)
+                res_df = pd.concat([res_df, df_stat],axis=0)
+        res_df.to_csv(output[0],sep="\t",header=True,index=True)

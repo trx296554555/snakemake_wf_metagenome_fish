@@ -11,6 +11,7 @@ min_version("7.32.4")
 configfile: "workflow/config/config.yaml"
 
 #### include rules ####
+include: "rules/common.smk"
 include: "rules/preprocess.smk"
 include: "rules/hostRemove.smk"
 include: "rules/readsClassify.smk"
@@ -24,26 +25,7 @@ include: "rules/binsRefine.smk"
 
 rule all:
     input:
-        config["root"] + "/" + config["folder"]["logs"] + "/01_check_run.log",
-        config["root"] + "/" + config["folder"]["reports"] + "/01_rm_host.report",
-        config["root"] + "/" + config["folder"]["reports"] + "/02_reads_classify.report" if config["reads_classify"]["enable"] else "",
-        config["root"] + "/" + config["folder"]["reports"] + "/03_get_mitogenome.report" if config["get_mitogenome"]["enable"] else "",
-        config["root"] + "/" + config["folder"]["reports"] + "/04_assemble_contigs.report" if config["assemble_contigs"]["enable"] else "",
-        # config["root"] + "/" + config["folder"]["reports"] + "/05_gene_prediction.report" if config["gene_prediction"]["enable"] else "",
-        # expand(config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/{sample}/{sample}_genefamilies.tsv", sample=get_run_sample()),
-        config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/all_genefamilies.tsv",
-        # expand(config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf", sample=get_run_sample()),ls
-        expand(config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.anno", sample=get_run_sample()),
-        expand(config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.anno", sample=get_run_sample()),
-        expand(config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.anno", sample=get_run_sample()),
-        # config["root"] + "/" + config["folder"]["reports"] + "/06_reads_anno_humman3.report" if config["reads_anno"]["huamnn3_enable"] else "",
-        # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabat2_bins", sample=get_run_sample()),
-        # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/concoct_bins", sample=get_run_sample()),
-        # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/maxbin2_bins", sample=get_run_sample()),
-        # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/das_merged_bins", sample=get_run_sample()),
-        # expand(config["root"] + "/" + config["folder"]["contigs_binning"] + "/{sample}/metabinner_bins", sample=get_run_sample()),
-        config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done"
-        # TODO 需要一个清理中间文件的rule 在工作流结束后运行
+        get_report(),
     message:
         """
         Start to run the pipeline. --------------------------------------------------

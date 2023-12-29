@@ -49,24 +49,25 @@ rule gather_all_bins:
         done
         """
 
-    # rule dereplicate_bins:cat {input.bins} | xargs -I {{}} ln -s {{}} {output.all_bins}
-    #     input:
-    #         bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/all_bins"),
-    #     output:
-    #         bins_derep1=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/rep_bins_comp70_con10_sa099_nc03"),
-    #         bins_derep2=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/rep_bins_comp70_con10_sa095_nc01")
-    #     conda:
-    #         config["root"] + "/" + config["envs"] + "/" + "drep.yaml"
-    #     params:
-    #         sa=0.99,nc=0.3,comp=70,con=10
-    #     log:
-    #         config["root"] + "/" + config["folder"]["logs"] + "/drep_dereplicate.log"
-    #     threads:
-    #         72
-    #     message:
-    #         "Dereplicate bins ----------------------"
-    #     shell:
-    #         """
-    #         dRep dereplicate {output.bins_derep1} -g {input.bins} -p {threads} -sa 0.99 -nc 0.3 -comp 70 -con 10 > {log} 2>&1
-    #         dRep dereplicate {output.bins_derep2} -g {input.bins} -p {threads} -sa 0.95 -nc 0.1 -comp 70 -con 10 > {log} 2>&1
-    #         """
+
+# checkpoint dereplicate_bins:
+#     input:
+#         bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/all_bins"),
+#     output:
+#         bins_derep1=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/rep_bins_comp70_con10_sa099_nc03"),
+#         bins_derep2=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/rep_bins_comp70_con10_sa095_nc01")
+#     conda:
+#         config["root"] + "/" + config["envs"] + "/" + "drep.yaml"
+#     params:
+#         sa=0.99,nc=0.3,comp=70,con=10
+#     log:
+#         config["root"] + "/" + config["folder"]["logs"] + "/drep_dereplicate.log"
+#     threads:
+#         72
+#     message:
+#         "Dereplicate bins ----------------------"
+#     shell:
+#         """
+#         dRep dereplicate {output.bins_derep1} -g {input.bins} -p {threads} -sa 0.99 -nc 0.3 -comp 70 -con 10 > {log} 2>&1
+#         dRep dereplicate {output.bins_derep2} -g {input.bins} -p {threads} -sa 0.95 -nc 0.1 -comp 70 -con 10 > {log} 2>&1
+#         """

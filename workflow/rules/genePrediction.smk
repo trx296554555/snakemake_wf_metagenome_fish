@@ -1,3 +1,5 @@
+import os
+
 rule predict_coding_genes:
     input:
         contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",
@@ -56,4 +58,30 @@ rule pruning_redundancy:
         seqkit stats -T {output.proteins} > {log}
         """
 
-# TODO gene annotation report
+
+rule report_predict_coding_genes:
+    input:
+        megahit_logs=expand(
+            config["root"] + "/" + config["folder"][
+                "gene_prediction"] + "/{sample}/{sample}.log",sample=get_run_sample()),
+        co_megahit_logs=expand(
+            config["root"] + "/" + config["folder"][
+                "gene_prediction"] + "/{item}/{item}.log",item=get_co_item()) if config["co_assemble"]["enable"] else []
+    output:
+        config["root"] + "/" + config["folder"]["reports"] + "/05_gene_prediction.report"
+    run:
+        log_list = input.megahit_logs + input.co_megahit_logs
+        res_dict = {}
+        header = "file\tinfos"
+        for l_file in log_list:
+            sample = os.path.basename(os.path.dirname(l_file))
+            with open(l_file, "r") as f:
+                lines = f.readlines()
+                header = lines[0].strip()
+                info = lines[-1].strip().split("\t")[1:]
+                res_dict[sample] = '\t'.join(info)
+        with open(output[0], "w") as f:
+            if header:
+                f.write(header + "\n")
+            for sample, info in res_dict.items():
+                f.write(sample + "\t" + info + "\n")

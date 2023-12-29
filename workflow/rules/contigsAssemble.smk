@@ -69,7 +69,7 @@ rule report_assemble_contigs:
         log_list = input.megahit_logs + input.co_megahit_logs
         res_dict = {}
         for l_file in log_list:
-            sample = os.path.basename(l_file).split("_")[0]
+            sample = os.path.basename(l_file).replace('_run.log','')
             res_dict[sample] = {}
             with open(l_file) as ipt:
                 lines = ipt.readlines()

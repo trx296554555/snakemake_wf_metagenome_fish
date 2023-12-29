@@ -11,6 +11,8 @@ get_mitogenome:
     enable: True
 assemble_contigs:
     enable: True
+gene_prediction:
+    enable: True
 reads_anno:
     huamnn3_enable: False
     rgi_enable: False

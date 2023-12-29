@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import math
 import argparse
 
 
@@ -11,7 +10,7 @@ def read_quant_file(quant_file):
         next(quant)
         for line in quant:
             line = line.strip().split("\t")
-            count = float(line[4])
+            count = float(line[3])  # 3:TPM 4:Counts
             if line[0] not in dict_quant.keys():
                 dict_quant[line[0]] = count
             else:
@@ -53,7 +52,7 @@ def read_dbcan_file(dbcan_file, dict_info, only_one=False):
                         count = id_count
                     else:
                         count = float(dict_data[id][1]) + id_count
-                    dict_data[id] = [id, str(math.ceil(count))]
+                    dict_data[id] = [id, "{:.6f}".format(count)]
     return dict_data
 
 
@@ -69,8 +68,8 @@ def read_rgi_file(rgi_file, dict_info):
                     if rgi_id not in dict_data:
                         count = float(dict_info[orf_id])
                     else:
-                        count = float(dict_info[orf_id][1]) + float(dict_data[rgi_id][1])
-                    dict_data[rgi_id] = [rgi_id, str(math.ceil(count))]
+                        count = float(dict_info[orf_id]) + float(dict_data[rgi_id][1])
+                    dict_data[rgi_id] = [rgi_id, "{:.6f}".format(count)]
     return dict_data
 
 
@@ -83,12 +82,13 @@ def read_vfdb_file(vfdb_file, dict_info):
             #### 目前提取的是全部结果，阈值在比对时设定，即：下面这个if不起作用
             if line[-1]:
                 orf_id = line[0].split(' ')[0]
+                vfdb_id = line[1]
                 if orf_id in dict_info:
-                    if line[1] not in dict_data:
+                    if vfdb_id not in dict_data:
                         count = float(dict_info[orf_id])
                     else:
-                        count = float(dict_info[orf_id][1]) + float(dict_data[line[1]][1])
-                    dict_data[line[1]] = [line[1], str(math.ceil(count))]
+                        count = float(dict_info[orf_id]) + float(dict_data[vfdb_id][1])
+                    dict_data[line[1]] = [line[1], "{:.6f}".format(count)]
     return dict_data
 
 
