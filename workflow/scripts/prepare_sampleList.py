@@ -1,3 +1,4 @@
+import os.path
 import sys
 import pandas as pd
 
@@ -100,6 +101,8 @@ for _, row in nother_group.iterrows():
 final_df.sort_values(by=['Server', 'Site_Group', 'Species_Group', 'Use_Sample', 'Sample_ID'], inplace=True)
 # 将final_df中的列顺序调整
 final_df = final_df[['Server', 'Sample_ID', 'Use_Sample', 'Site_Group', 'Species_Group', 'Species', 'Ref','Download_link']]
+
+# TODO 有时候在不同服务器上会产生不一样结果 之后需要修复下
 final_df.to_csv('../config/finalSampleList.csv', index=False)
 
 out_to = sys.argv[1]

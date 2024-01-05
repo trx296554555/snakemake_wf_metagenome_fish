@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 
 
 if os.path.exists(f'{config["root"]}/{config["meta"]["sampleList"]}'):
@@ -83,7 +84,10 @@ def get_report():
         config["root"] + "/" + config["folder"]["reports"] + "/05_gene_prediction.report" if config["gene_prediction"][
             "enable"] else "",
         config["root"] + "/" + config["folder"]["reports"] + "/06_reads_annotation.report" if reads_anno_enable else "",
-        config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done",
+        config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done" if config["contigs_binning"][
+            "enable"] else "",
+        config["root"] + "/" + config["folder"]["reports"] + "/07_contigs_binning.report" if config["bins_dereplicate"][
+            "enable"] else "",
         # TODO 需要一个清理中间文件的rule 在工作流结束后运行
     ]
     report_list = [i for i in report_list if i != ""]

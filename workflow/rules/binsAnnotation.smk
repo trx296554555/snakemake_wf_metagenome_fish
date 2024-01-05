@@ -1,20 +1,3 @@
-def get_refined_bins(wildcards):
-    refined_bins_dir = checkpoints.dereplicate_bins.get(**wildcards).output.bins_derep2
-    refined_bins = glob.glob(refined_bins_dir + "/dereplicated_genomes/*.f*a")
-    return refined_bins
-
-rule get_refined_bins:
-    input:
-       get_refined_bins()
-    output:
-        bins_derep2=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/rep_bins_user"),
-    shell:
-        """
-        mkdir -p {output.bins_derep2}
-        ln -s {input} {output.bins_derep2}
-        """
-
-
 rule gtdbtk_classify_wf:
     input:
         bins_derep2=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/rep_bins_user"),
@@ -54,6 +37,7 @@ rule gtdbtk_classify_wf:
         mv {params.user_tree_dir}/{params.prefix}.unrooted.tree {output.user_bac120_tree}
         """
 
+
 rule gtdbtk_de_novo_tree:
     input:
         bins_derep2=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/rep_bins_user"),
@@ -80,6 +64,7 @@ rule gtdbtk_de_novo_tree:
         --outgroup_taxon p__Patescibacteria > {log} 2>&1
         mv {params.outdir}/{params.prefix}.bac120.decorated.tree {output.tree}
         """
+
 
 rule prokka_anno_bins: # rgi,dbcan,vfdb 等等，可以结合下面定量的rule
     input:

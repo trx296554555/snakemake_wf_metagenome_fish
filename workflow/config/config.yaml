@@ -22,6 +22,11 @@ co_assemble:
     enable: True
     col: [Site_Group, Species_Group]
     min_ctg_len: 1000
+contigs_binning:
+    enable: True
+bins_dereplicate:
+    enable: True
+    anno_level: strain
 # Database
 db_root: /home/user002/database
 db:
@@ -33,6 +38,7 @@ db:
     vfdb: vf_20230915_db/VF_full_db.dmnd
     rgi: card_20231214_db
     dbcan: dbcan_20231214_db
+    checkm: checkm_20150116_db
 # Folder
 envs: workflow/config/envs
 scripts: workflow/scripts
@@ -53,7 +59,9 @@ folder:
     reads_gene_quant: 06_reads_annotation/04_gene_quant
     contigs_binning: 07_binning
     bin_refine: 08_bin_refine
-    bin_quantify: 09_bin_quantify
-    bin_anno_rgi: 10_bin_annotation/01_rgi
-    bin_anno_dbcan: 10_bin_annotation/02_dbcan
-    bin_anno_vfdb: 10_bin_annotation/03_vfdb
+    bin_dereplication: 09_dereplication
+    bin_quantify: 10_bin_quantify
+    bin_anno_rgi: 11_bin_annotation/01_rgi
+    bin_anno_dbcan: 11_bin_annotation/02_dbcan
+    bin_anno_vfdb: 11_bin_annotation/03_vfdb
+
