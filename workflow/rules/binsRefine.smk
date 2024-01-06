@@ -56,13 +56,14 @@ rule dereplicate_bins:
         bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins",
     output:
         strain_bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins"),
-        checkm_results=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins/data_tables/genomeInfo.csv",
+        checkm_results=config["root"] + "/" + config["folder"][
+            "bins_dereplication"] + "/strain_bins/data_tables/genomeInfo.csv",
         species_bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins"),
         done=touch(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/dereplicate_bins.done")
     conda:
         config["root"] + "/" + config["envs"] + "/" + "drep.yaml"
     params:
-        comp=70, con=10, strain_ANI=0.99, species_ANI=0.95, nc=0.1,
+        comp=70,con=10,strain_ANI=0.99,species_ANI=0.95,nc=0.1,
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.benchmark.txt"
     log:
@@ -86,7 +87,7 @@ rule get_MAGs:
         mags_dir=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins"),
         mags_done=touch(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done")
     params:
-        anno_level = config["bins_dereplicate"]["anno_level"]
+        anno_level=config["bins_dereplicate"]["anno_level"]
     shell:
         """
         mkdir -p {output.mags_dir}
@@ -106,15 +107,17 @@ rule get_MAGs:
 
 rule report_contigs_binning:
     input:
-        all_bins = config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/",
-        gather_done = config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/gather.done",
+        all_bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/",
+        gather_done=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/gather.done",
         mags_done=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done",
-        checkm_results=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095/data_tables/genomeInfo.csv"
+        checkm_results=config["root"] + "/" + config["folder"][
+            "bins_dereplication"] + "/strain_bins/data_tables/genomeInfo.csv",
     output:
         contigs_binning_report=config["root"] + "/" + config["folder"]["reports"] + "/07_contigs_binning.report"
     params:
-        species_bins = config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095/dereplicated_genomes",
-        strain_bins = config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins_comp70_con10_ANI099/dereplicated_genomes",
+        species_bins=config["root"] + "/" + config["folder"][
+            "bins_dereplication"] + "/species_bins/dereplicated_genomes",
+        strain_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins/dereplicated_genomes",
     run:
         res_dict = {}
         for i in os.listdir(input.all_bins):
@@ -139,13 +142,14 @@ rule report_contigs_binning:
                 dereplicate_bins_list = os.listdir(params.strain_bins)
             else:
                 dereplicate_bins_list = os.listdir(params.species_bins)
-            for comp in [70,80,90,100]:
-                for con in [10,5]:
-                    col_name = '{}_comp{}_con{}'.format(ani, comp, con)
+            for comp in [70, 80, 90, 100]:
+                for con in [10, 5]:
+                    col_name = '{}_comp{}_con{}'.format(ani,comp,con)
                     col_list.append(col_name)
                     checkm_table[col_name] = np.nan
                     for i in range(len(checkm_table)):
-                        if checkm_table.loc[i, 'genome'] in dereplicate_bins_list and checkm_table.loc[i, 'completeness'] >= comp and checkm_table.loc[i, 'contamination'] <= con:
+                        if checkm_table.loc[i, 'genome'] in dereplicate_bins_list and checkm_table.loc[
+                            i, 'completeness'] >= comp and checkm_table.loc[i, 'contamination'] <= con:
                             checkm_table.loc[i, col_name] = 1
 
         checkm_table = checkm_table.dropna(subset=['ANI99_comp70_con10', 'ANI95_comp70_con10'],how='all')
@@ -160,4 +164,4 @@ rule report_contigs_binning:
         # 将table 和 checkm_table 合并
         table = table.join(checkm_table)
         table = table.fillna(0)
-        table.to_csv(output.contigs_binning_report, sep='\t')
+        table.to_csv(output.contigs_binning_report,sep='\t')
