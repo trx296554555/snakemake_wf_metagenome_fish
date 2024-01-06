@@ -19,7 +19,7 @@ rule gather_need_bins:
         das_tool_bins=get_das_tool_names,
         metabinner_bins=get_metabinner_names,
     output:
-        bins=config["root"] + "/" + config["folder"]["bin_refine"] + "/need_bins/{sample}_bin.list",
+        bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/need_bins/{sample}_bin.list",
     run:
         shell("mkdir -p `dirname {output.bins}`")
         with open(output.bins,"w") as f:
@@ -32,13 +32,13 @@ rule gather_need_bins:
 rule gather_all_bins:
     input:
         sample_bins=expand(config["root"] + "/" + config["folder"][
-            "bin_refine"] + "/need_bins/" + "{sample}_bin.list",sample=get_run_sample()),
+            "bins_refine"] + "/need_bins/" + "{sample}_bin.list",sample=get_run_sample()),
         co_assemble_bins=expand(config["root"] + "/" + config["folder"][
-            "bin_refine"] + "/need_bins/" + "{item}_bin.list",item=get_co_item()) if config["co_assemble"][
+            "bins_refine"] + "/need_bins/" + "{item}_bin.list",item=get_co_item()) if config["co_assemble"][
             "enable"] else [],
     output:
-        all_bins=directory(config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/"),
-        gather_done=touch(config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done")
+        all_bins=directory(config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/"),
+        gather_done=touch(config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/gather.done")
     shell:
         """
         mkdir -p {output.all_bins}
@@ -53,24 +53,24 @@ rule gather_all_bins:
 
 rule dereplicate_bins:
     input:
-        bins=config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins",
+        bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins",
     output:
-        species_bins=directory(config["root"] + "/" + config["folder"]["bin_dereplication"] + "/species_bins_comp70_con10_ANI095"),
-        checkm_results=config["root"] + "/" + config["folder"]["bin_dereplication"] + "/species_bins_comp70_con10_ANI095/data_tables/genomeInfo.csv",
-        strain_bins=directory(config["root"] + "/" + config["folder"]["bin_dereplication"] + "/strain_bins_comp70_con10_ANI099"),
-        done=touch(config["root"] + "/" + config["folder"]["bin_dereplication"] + "/dereplicate_bins.done")
+        species_bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095"),
+        checkm_results=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095/data_tables/genomeInfo.csv",
+        strain_bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins_comp70_con10_ANI099"),
+        done=touch(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/dereplicate_bins.done")
     conda:
         config["root"] + "/" + config["envs"] + "/" + "drep.yaml"
     params:
         comp=70, con=10, species_ANI=0.95, strain_ANI=0.99, nc=0.1,
     benchmark:
-        config["root"] + "/benchmark/" + config["folder"]["bin_dereplication"] + "/drep_dereplicate_bins.benchmark.txt"
+        config["root"] + "/benchmark/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.benchmark.txt"
     log:
-        config["root"] + "/" + config["folder"]["bin_dereplication"] + "/drep_dereplicate_bins.log"
+        config["root"] + "/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.log"
     threads:
         64
     message:
-        "Dereplicate bins at species and strain level ----------------------"
+        "17: Dereplicate bins at species and strain level ----------------------"
     shell:
         """
         dRep dereplicate {output.species_bins} -g {input.bins}/*.f*a -p {threads} -sa {params.species_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} > {log} 2>&1
@@ -80,33 +80,41 @@ rule dereplicate_bins:
 
 rule get_MAGs:
     input:
-        species_bins=config["root"] + "/" + config["folder"]["bin_dereplication"] + "/species_bins_comp70_con10_ANI095",
-        strain_bins=config["root"] + "/" + config["folder"]["bin_dereplication"] + "/strain_bins_comp70_con10_ANI099",
+        species_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095",
+        strain_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins_comp70_con10_ANI099",
     output:
-        mags_dir=directory(config["root"] + "/" + config["folder"]["bin_dereplication"] + "/mag_bins"),
-        mags_done=touch(config["root"] + "/" + config["folder"]["bin_dereplication"] + "/get_MAGs_bins.done")
+        mags_dir=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins"),
+        mags_done=touch(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done")
     params:
-        anno_level = 'strain'
+        anno_level = config["bins_dereplicate"]["anno_level"]
     shell:
         """
         mkdir -p {output.mags_dir}
-        for eachbins in {input.strain_bins}/dereplicated_genomes/*.f*a; do
-            ln -sf $eachbins {output.mags_dir}
-        done
+        if [ {params.anno_level} == "species" ]; then
+            for eachbins in {input.species_bins}/dereplicated_genomes/*.f*a; do
+                ln -sf $eachbins {output.mags_dir}
+            done
+        elif [ {params.anno_level} == "strain" ]; then
+            for eachbins in {input.strain_bins}/dereplicated_genomes/*.f*a; do
+                ln -sf $eachbins {output.mags_dir}
+            done
+        else
+            exit 1
+        fi
         """
 
 
 rule report_contigs_binning:
     input:
-        all_bins = config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/",
-        gather_done = config["root"] + "/" + config["folder"]["bin_refine"] + "/all_bins/gather.done",
-        mags_done=config["root"] + "/" + config["folder"]["bin_dereplication"] + "/get_MAGs_bins.done",
-        checkm_results=config["root"] + "/" + config["folder"]["bin_dereplication"] + "/species_bins_comp70_con10_ANI095/data_tables/genomeInfo.csv"
+        all_bins = config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/",
+        gather_done = config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/gather.done",
+        mags_done=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done",
+        checkm_results=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095/data_tables/genomeInfo.csv"
     output:
         contigs_binning_report=config["root"] + "/" + config["folder"]["reports"] + "/07_contigs_binning.report"
     params:
-        species_bins = config["root"] + "/" + config["folder"]["bin_dereplication"] + "/species_bins_comp70_con10_ANI095/dereplicated_genomes",
-        strain_bins = config["root"] + "/" + config["folder"]["bin_dereplication"] + "/strain_bins_comp70_con10_ANI099/dereplicated_genomes",
+        species_bins = config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095/dereplicated_genomes",
+        strain_bins = config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins_comp70_con10_ANI099/dereplicated_genomes",
     run:
         res_dict = {}
         for i in os.listdir(input.all_bins):

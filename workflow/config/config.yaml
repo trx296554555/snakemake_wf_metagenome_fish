@@ -27,6 +27,8 @@ contigs_binning:
 bins_dereplicate:
     enable: True
     anno_level: strain
+bins_classify:
+    enable: True
 # Database
 db_root: /home/user002/database
 db:
@@ -39,6 +41,7 @@ db:
     rgi: card_20231214_db
     dbcan: dbcan_20231214_db
     checkm: checkm_20150116_db
+    gtdbtk: gtdbtk_20231214_db
 # Folder
 envs: workflow/config/envs
 scripts: workflow/scripts
@@ -58,10 +61,11 @@ folder:
     reads_anno_vfdb: 06_reads_annotation/03_vfdb
     reads_gene_quant: 06_reads_annotation/04_gene_quant
     contigs_binning: 07_binning
-    bin_refine: 08_bin_refine
-    bin_dereplication: 09_dereplication
-    bin_quantify: 10_bin_quantify
-    bin_anno_rgi: 11_bin_annotation/01_rgi
-    bin_anno_dbcan: 11_bin_annotation/02_dbcan
-    bin_anno_vfdb: 11_bin_annotation/03_vfdb
+    bins_refine: 08_bin_refine
+    bins_dereplication: 09_dereplication
+    bins_classify: 10_bin_classify
+    bins_anno_rgi: 11_bin_annotation/01_rgi
+    bins_anno_dbcan: 11_bin_annotation/02_dbcan
+    bins_anno_vfdb: 11_bin_annotation/03_vfdb
+    bins_quantify: 10_bin_quantify
 

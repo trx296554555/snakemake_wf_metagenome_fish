@@ -1,5 +1,8 @@
 root_path=$(dirname `dirname \`dirname "$CONDA_PREFIX"_\``)
 env_name=$(basename $CONDA_PREFIX)
+config_path="${root_path}"/workflow/config
+db_root=$(awk -F ': ' '/db_root:/{print $2}' "${config_path}"/config.yaml)
+gtdbtk_db=$(awk -F ': ' '/    gtdbtk:/{print $2}' "${config_path}"/config.yaml)
 
   {
     echo "Make additional adjustments for the post-deployment of the Conda environment ${env_name} (gtdbtk)"
@@ -30,3 +33,5 @@ cat >> "${root_path}"/logs/env.log <<EOF
         3. Set the GTDBTK_DATA_PATH environment variable by running:
             conda env config vars set GTDBTK_DATA_PATH=${db_root}/${gtdbtk_db}
 EOF
+exit 1
+fi

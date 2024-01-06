@@ -21,6 +21,7 @@ include: "rules/genePrediction.smk"
 include: "rules/readsAnnotation.smk"
 include: "rules/contigsBinning.smk"
 include: "rules/binsRefine.smk"
+include: "rules/binsClassify.smk"
 
 
 rule all:
