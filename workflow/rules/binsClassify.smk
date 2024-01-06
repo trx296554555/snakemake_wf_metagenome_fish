@@ -1,3 +1,7 @@
+import os.path
+
+import pandas as pd
+
 rule gtdbtk_classify_wf:
     input:
         mags_dir=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins",
@@ -62,9 +66,11 @@ rule gtdbtk_infer_mag_tree:
             "bins_classify"] + "/gtdbtk_classify_wf/res.bac120.user_msa.fasta.gz",
     output:
         user_ar53_tree=config["root"] + "/" + config["folder"][
-            "bins_classify"] + "/gtdbtk_mag_tree/ar53_unrooted.tree",
+            "bins_classify"] + "/gtdbtk_mag_tree/user_ar53_unrooted.tree",
         user_bac120_tree=config["root"] + "/" + config["folder"][
             "bins_classify"] + "/gtdbtk_mag_tree/user_bac120_unrooted.tree",
+        user_all_tree=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_mag_tree/user_all_unrooted.tree"
     conda:
         config["root"] + "/" + config["envs"] + "/" + "gtdbtk.yaml"
     message:
@@ -73,25 +79,37 @@ rule gtdbtk_infer_mag_tree:
         80
     params:
         user_tree_dir=config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_mag_tree/user_tree",
-        prefix="gtdbtk"
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["bins_classify"] + "/gtdbtk_infer_mag_tree.benchmark.txt"
+    log:
+        config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_infer_mag_tree.log"
     shell:
         """
         mkdir -p {params.user_tree_dir}
         if [ ! -f {input.ar53_msa}.is_null ]; then
             gunzip -kc {input.ar53_msa} > {params.user_tree_dir}/ar53_msa.fa
-            gtdbtk infer --msa_file {params.user_tree_dir}/ar53_msa.fa --out_dir {params.user_tree_dir} --prefix {params.prefix} --cpus {threads}
-            gtdbtk convert_to_itol --input_tree {params.user_tree_dir}/{params.prefix}.unrooted.tree --output_tree {params.user_tree_dir}/{params.prefix}.unrooted.itol.tree
-            cp -f {params.user_tree_dir}/{params.prefix}.unrooted.tree {output.user_ar53_tree}
+            gtdbtk infer --msa_file {params.user_tree_dir}/ar53_msa.fa --out_dir {params.user_tree_dir} --prefix ar53 --cpus {threads} > {log} 2>&1
+            gtdbtk convert_to_itol --input_tree {params.user_tree_dir}/ar53.unrooted.tree --output_tree {params.user_tree_dir}/ar53.unrooted.itol.tree
+            cp -f {params.user_tree_dir}/ar53.unrooted.tree {output.user_ar53_tree}
         else
             touch {output.user_ar53_tree} {output.user_ar53_tree}.is_null
         fi
         if [ ! -f {input.bac120_msa}.is_null ]; then
             gunzip -kc {input.bac120_msa} > {params.user_tree_dir}/bac120_msa.fa
-            gtdbtk infer --msa_file {params.user_tree_dir}/bac120_msa.fa --out_dir {params.user_tree_dir} --prefix {params.prefix} --cpus {threads}
-            gtdbtk convert_to_itol --input_tree {params.user_tree_dir}/{params.prefix}.unrooted.tree --output_tree {params.user_tree_dir}/{params.prefix}.unrooted.itol.tree
-            cp -f {params.user_tree_dir}/{params.prefix}.unrooted.tree {output.user_bac120_tree}
+            gtdbtk infer --msa_file {params.user_tree_dir}/bac120_msa.fa --out_dir {params.user_tree_dir} --prefix bac120 --cpus {threads} >> {log} 2>&1
+            gtdbtk convert_to_itol --input_tree {params.user_tree_dir}/bac120.unrooted.tree --output_tree {params.user_tree_dir}/bac120.unrooted.itol.tree
+            cp -f {params.user_tree_dir}/bac120.unrooted.tree {output.user_bac120_tree}
         else
             touch {output.user_bac120_tree} {output.user_bac120_tree}.is_null
+        fi
+        if [ ! -f {input.ar53_msa}.is_null ] -a [ ! -f {input.bac120_msa}.is_null ]; then
+            cat {input.ar53_msa} {input.bac120_msa} > {params.user_tree_dir}/user_msa_all.fa.gz
+            gunzip {params.user_tree_dir}/user_msa_all.fa.gz
+            gtdbtk infer --msa_file {params.user_tree_dir}/user_msa_all.fa --out_dir {params.user_tree_dir} --prefix all --cpus {threads} >> {log} 2>&1
+            gtdbtk convert_to_itol --input_tree {params.user_tree_dir}/all.unrooted.tree --output_tree {params.user_tree_dir}/all.unrooted.itol.tree
+            cp -f {params.user_tree_dir}/all.unrooted.tree {output.user_all_tree}
+        else
+            touch {output.user_all_tree} {output.user_all_tree}.is_null
         fi
         """
 
@@ -123,3 +141,21 @@ rule gtdbtk_de_novo_tree:
         --outgroup_taxon p__Patescibacteria > {log} 2>&1
         mv {params.outdir}/{params.prefix}.bac120.decorated.tree {output.tree}
         """
+
+
+rule report_bins_classify:
+    input:
+        ar53_tsv=config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf/res.ar53.summary.tsv",
+        bac120_tsv=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_classify_wf/res.bac120.summary.tsv",
+        user_all_tree=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_mag_tree/user_all_unrooted.tree"
+    output:
+        bins_classify_report=config["root"] + "/" + config["folder"]["reports"] + "/08_bins_classify.report"
+    run:
+        if os.path.getsize(input.bac120_tsv) > 0:
+            bac_table = pd.read_csv(input.bac120_tsv, sep="\t")
+            print(bac_table.head)
+            bac_table = bac_table[["user_genome", "classification", "fastani_ani", "closest_placement_ani"]]
+            # final_ani 为 fastani_ani 和 closest_placement_ani 中的最大值
+            bac_table["final_ani"] = bac_table[["fastani_ani", "closest_placement_ani"]].max(axis=1)

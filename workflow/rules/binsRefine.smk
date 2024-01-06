@@ -55,14 +55,14 @@ rule dereplicate_bins:
     input:
         bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins",
     output:
-        species_bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095"),
-        checkm_results=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095/data_tables/genomeInfo.csv",
-        strain_bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins_comp70_con10_ANI099"),
+        strain_bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins"),
+        checkm_results=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins/data_tables/genomeInfo.csv",
+        species_bins=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins"),
         done=touch(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/dereplicate_bins.done")
     conda:
         config["root"] + "/" + config["envs"] + "/" + "drep.yaml"
     params:
-        comp=70, con=10, species_ANI=0.95, strain_ANI=0.99, nc=0.1,
+        comp=70, con=10, strain_ANI=0.99, species_ANI=0.95, nc=0.1,
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.benchmark.txt"
     log:
@@ -73,15 +73,15 @@ rule dereplicate_bins:
         "17: Dereplicate bins at species and strain level ----------------------"
     shell:
         """
-        dRep dereplicate {output.species_bins} -g {input.bins}/*.f*a -p {threads} -sa {params.species_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} > {log} 2>&1
-        dRep dereplicate {output.strain_bins} -g {input.bins}/*.f*a -p {threads} -sa {params.strain_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} --genomeInfo {output.checkm_results} > {log} 2>&1
+        dRep dereplicate {output.strain_bins} -g {input.bins}/*.f*a -p {threads} -sa {params.strain_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} > {log} 2>&1
+        dRep dereplicate {output.species_bins} -g {output.strain_bins}/dereplicated_genomes/*.f*a -p {threads} -sa {params.species_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} --genomeInfo {output.checkm_results} >> {log} 2>&1
         """
 
 
 rule get_MAGs:
     input:
-        species_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins_comp70_con10_ANI095",
-        strain_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins_comp70_con10_ANI099",
+        strain_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins",
+        species_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins",
     output:
         mags_dir=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins"),
         mags_done=touch(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done")

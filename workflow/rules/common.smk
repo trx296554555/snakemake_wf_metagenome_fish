@@ -88,10 +88,9 @@ def get_report():
             "enable"] else "",
         config["root"] + "/" + config["folder"]["reports"] + "/07_contigs_binning.report" if config["bins_dereplicate"][
             "enable"] else "",
-        # TODO 需要一个清理中间文件的rule 在工作流结束后运行
-        config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify.done" if config["bins_classify"][
+        config["root"] + "/" + config["folder"]["reports"] + "/08_bins_classify.report" if config["bins_classify"][
             "enable"] else "",
-        config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_mag_tree/user_bac120_unrooted.tree"
+        # TODO 需要一个清理中间文件的rule 在工作流结束后运行
     ]
     report_list = [i for i in report_list if i != ""]
     return report_list
