@@ -74,8 +74,8 @@ rule dereplicate_bins:
         "17: Dereplicate bins at species and strain level ----------------------"
     shell:
         """
-        dRep dereplicate {output.strain_bins} -g {input.bins}/*.f*a -p {threads} -sa {params.strain_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} > {log} 2>&1
-        dRep dereplicate {output.species_bins} -g {output.strain_bins}/dereplicated_genomes/*.f*a -p {threads} -sa {params.species_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} --genomeInfo {output.checkm_results} >> {log} 2>&1
+        dRep dereplicate {output.strain_bins} -g {input.bins}/*.f*a -p {threads} -sa {params.strain_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} --S_algorithm fastANI > {log} 2>&1
+        dRep dereplicate {output.species_bins} -g {output.strain_bins}/dereplicated_genomes/*.f*a -p {threads} -sa {params.species_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} --S_algorithm fastANI --genomeInfo {output.checkm_results} >> {log} 2>&1
         """
 
 
