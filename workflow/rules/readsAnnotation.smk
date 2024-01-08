@@ -2,7 +2,7 @@ import os
 import shutil
 import pandas as pd
 
-rule generate_humann3_report:
+rule generate_reads_humann3_report:
     input:
         fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
         fq2=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq",
@@ -37,7 +37,7 @@ rule generate_humann3_report:
         """
 
 
-rule merge_humann3_report:
+rule merge_reads_humann3_report:
     input:
         all_gf_tsv=expand(
             config["root"] + "/" + config["folder"]["reads_anno_humann3"] + "/{sample}/{sample}_genefamilies.tsv",
@@ -83,7 +83,7 @@ rule merge_humann3_report:
         """
 
 
-rule salmon_index:
+rule get_reads_salmon_index:
     input:
         config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.gene.prune.fa"
     output:
@@ -106,7 +106,7 @@ rule salmon_index:
         """
 
 
-rule quantify_gene_expression:
+rule quantify_reads_gene_expression:
     input:
         idx=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.salmon.idx",
         fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
@@ -133,7 +133,7 @@ rule quantify_gene_expression:
         """
 
 
-rule get_rgi_annotation:
+rule get_reads_rgi_annotation:
     input:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
     output:
@@ -161,7 +161,7 @@ rule get_rgi_annotation:
         """
 
 
-rule generate_rgi_report:
+rule generate_reads_rgi_report:
     input:
         rgi_anno=config["root"] + "/" + config["folder"]["reads_anno_rgi"] + "/{sample}/{sample}.rgi.anno",
         expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
@@ -177,7 +177,7 @@ rule generate_rgi_report:
         """
 
 
-rule merge_rgi_report:
+rule merge_reads_rgi_report:
     input:
         all_rgi_tsv=expand(config["root"] + "/" + config["folder"][
             "reads_anno_rgi"] + "/{sample}/{sample}.rgi.tsv",sample=get_run_sample()),
@@ -197,7 +197,7 @@ rule merge_rgi_report:
         """
 
 
-rule get_dbcan_annotation:
+rule get_reads_dbcan_annotation:
     input:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
     output:
@@ -229,7 +229,7 @@ rule get_dbcan_annotation:
         """
 
 
-rule generate_dbcan_report:
+rule generate_reads_dbcan_report:
     input:
         dbcan_anno=config["root"] + "/" + config["folder"]["reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.anno",
         expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
@@ -245,7 +245,7 @@ rule generate_dbcan_report:
         """
 
 
-rule merge_dbcan_report:
+rule merge_reads_dbcan_report:
     input:
         all_dbcan_tsv=expand(config["root"] + "/" + config["folder"][
             "reads_anno_dbcan"] + "/{sample}/{sample}.dbcan.tsv",sample=get_run_sample()),
@@ -265,7 +265,7 @@ rule merge_dbcan_report:
         """
 
 
-rule get_vfdb_annotation:
+rule get_reads_vfdb_annotation:
     input:
         proteins=config["root"] + "/" + config["folder"]["gene_prediction"] + "/{sample}/{sample}.protein.prune.faa",
     output:
@@ -289,7 +289,7 @@ rule get_vfdb_annotation:
         """
 
 
-rule generate_vfdb_report:
+rule generate_reads_vfdb_report:
     input:
         vfdb_anno=config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.anno",
         expression=config["root"] + "/" + config["folder"]["reads_gene_quant"] + "/{sample}/{sample}.sf"
@@ -305,7 +305,7 @@ rule generate_vfdb_report:
         """
 
 
-rule merge_vfdb_report:
+rule merge_reads_vfdb_report:
     input:
         all_vfdb_tsv=expand(config["root"] + "/" + config["folder"][
             "reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.tsv",sample=get_run_sample()),

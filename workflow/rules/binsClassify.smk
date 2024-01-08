@@ -1,6 +1,76 @@
-import os.path
+rule concatenation_MAGs:
+    input:
+        mags_dir=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins",
+    output:
+        concatenation_MAGs_fa=config["root"] + "/" + config["folder"][
+            "bins_dereplication"] + "/concatenation_MAGs/concatenation_MAGs.fa"
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "tools.yaml"
+    message:
+        "18.1: Concatenation MAGs"
+    params:
+        concatenation_MAGs_dir=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/concatenation_MAGs",
+    shell:
+        """
+        mkdir -p {params.concatenation_MAGs_dir}/tmp
+        for f in {input.mags_dir}/*.f*a; do
+            file_name=$(basename $f)
+            seqkit replace -p '.*' -r ${{file_name/.fa/}}={{nr}} -w 0 $f > {params.concatenation_MAGs_dir}/tmp/${{file_name}}
+        done
+        cat {params.concatenation_MAGs_dir}/tmp/*.fa > {output.concatenation_MAGs_fa}
+        rm -rf {params.concatenation_MAGs_dir}/tmp
+        """
 
-import pandas as pd
+
+rule get_MAGs_salmon_index:
+    input:
+        concatenation_MAGs_fa=config["root"] + "/" + config["folder"][
+            "bins_dereplication"] + "/concatenation_MAGs/concatenation_MAGs.fa"
+    output:
+        index=directory(
+            config["root"] + "/" + config["folder"]["bins_dereplication"] + "/concatenation_MAGs/salmon_index"),
+        done=touch(
+            config["root"] + "/" + config["folder"]["bins_dereplication"] + "/concatenation_MAGs/salmon_index.done")
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "salmon.yaml"
+    message:
+        "18.2 Indexing of MAGs"
+    threads:
+        12
+    log:
+        config["root"] + "/" + config["folder"]["bins_dereplication"] + "/concatenation_MAGs/salmon_index.log"
+    shell:
+        """
+        salmon index -t {input.concatenation_MAGs_fa} -i {output.index} -p {threads} > {log} 2>&1
+        """
+
+
+rule quantify_MAGs_expression:
+    input:
+        index=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/concatenation_MAGs/salmon_index",
+        fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
+        fq2=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq",
+    output:
+        expression=config["root"] + "/" + config["folder"]["bins_classify"] + "/quant_MAGs/{sample}/{sample}.sf",
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "salmon.yaml"
+    threads:
+        12
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["bins_classify"] + "/quant_MAGs/{sample}/{sample}.quant.log"
+    log:
+        config["root"] + "/" + config["folder"]["bins_classify"] + "/quant_MAGs/{sample}/{sample}.quant.log"
+    message:
+        "18.3 Quantify MAGs expression using salmon"
+    params:
+        dir=config["root"] + "/" + config["folder"]["bins_classify"] + "/quant_MAGs/{sample}"
+    shell:
+        """
+        salmon quant -i {input.index} -l A --meta -1 {input.fq1} -2 {input.fq2} \
+        -o {params.dir} -p {threads} --validateMappings --seqBias --quiet > {log} 2>&1
+        mv {params.dir}/quant.sf {output.expression}
+        """
+
 
 rule gtdbtk_classify_wf:
     input:
@@ -17,7 +87,7 @@ rule gtdbtk_classify_wf:
     conda:
         config["root"] + "/" + config["envs"] + "/" + "gtdbtk.yaml"
     message:
-        "18: GTDB-Tk classify_wf"
+        "18.4: GTDB-Tk classify_wf"
     threads:
         80
     params:
@@ -58,7 +128,7 @@ rule gtdbtk_classify_wf:
         """
 
 
-rule gtdbtk_infer_mag_tree:
+rule gtdbtk_infer_MAGs_tree:
     input:
         ar53_msa=config["root"] + "/" + config["folder"][
             "bins_classify"] + "/gtdbtk_classify_wf/res.ar53.user_msa.fasta.gz",
@@ -114,6 +184,42 @@ rule gtdbtk_infer_mag_tree:
         """
 
 
+rule get_MAGs_classify:
+    input:
+        ar53_tsv=config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf/res.ar53.summary.tsv",
+        bac120_tsv=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_classify_wf/res.bac120.summary.tsv",
+        user_all_tree=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_mag_tree/user_all_unrooted.tree"
+    output:
+        all_classify_tsv=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_classify_wf/res.all.summary.tsv",
+    params:
+        species_bins=config["root"] + "/" + config["folder"][
+            "bins_dereplication"] + "/species_bins/dereplicated_genomes",
+    run:
+        table = pd.DataFrame()
+        if os.path.getsize(input.bac120_tsv) > 0:
+            bac_table = pd.read_csv(input.bac120_tsv,sep="\t")
+            bac_table = bac_table[["user_genome", "classification", "fastani_ani", "closest_placement_ani"]]
+            bac_table["final_ani"] = bac_table[["fastani_ani", "closest_placement_ani"]].max(axis=1)
+            table = pd.concat([table, bac_table])
+        if os.path.getsize(input.ar53_tsv) > 0:
+            ar53_table = pd.read_csv(input.ar53_tsv,sep="\t")
+            ar53_table = ar53_table[["user_genome", "classification", "fastani_ani", "closest_placement_ani"]]
+            ar53_table["final_ani"] = ar53_table[["fastani_ani", "closest_placement_ani"]].max(axis=1)
+            table = pd.concat([table, ar53_table])
+
+        species_list = os.listdir(params.species_bins)
+        species_list = [x.replace('.fa','') for x in species_list]
+        table["species_bins"] = table["user_genome"].apply(lambda x: x if x in species_list else "")
+        table.fillna(0,inplace=True)
+        table.rename(columns={'user_genome': 'strain_bins'},inplace=True)
+        table = table[["strain_bins", "species_bins", "classification", "final_ani"]]
+        table.to_csv(output.all_classify_tsv,sep="\t",index=False)
+
+
+# This rule needs to be modified according to the user's needs
 rule gtdbtk_de_novo_tree:
     input:
         bins_derep2=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/rep_bins_user",
@@ -127,7 +233,7 @@ rule gtdbtk_de_novo_tree:
     threads:
         80
     params:
-        outdir=directory(config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf/denovo_tree"),
+        out_dir=config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf/denovo_tree",
         prefix="fish",
         force=True,
         skip_gtdb_refs=False
@@ -135,27 +241,74 @@ rule gtdbtk_de_novo_tree:
         config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_de_novo_tree.log"
     shell:
         """
-        gtdbtk de_novo_wf --cpus {threads} --genome_dir {input.bins_derep2} --out_dir {params.outdir} \
+        gtdbtk de_novo_wf --cpus {threads} --genome_dir {input.bins_derep2} --out_dir {params.out_dir} \
         --bacteria --skip_ani_screen --force {params.force} --skip_gtdb_refs {params.skip_gtdb_refs} \
         --extension fa --pplacer_cpus  {threads} --prefix {params.prefix} \
         --outgroup_taxon p__Patescibacteria > {log} 2>&1
-        mv {params.outdir}/{params.prefix}.bac120.decorated.tree {output.tree}
+        mv {params.out_dir}/{params.prefix}.bac120.decorated.tree {output.tree}
         """
 
 
-rule report_bins_classify:
+rule generate_MAGs_classify_report:
     input:
-        ar53_tsv=config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf/res.ar53.summary.tsv",
-        bac120_tsv=config["root"] + "/" + config["folder"][
-            "bins_classify"] + "/gtdbtk_classify_wf/res.bac120.summary.tsv",
-        user_all_tree=config["root"] + "/" + config["folder"][
-            "bins_classify"] + "/gtdbtk_mag_tree/user_all_unrooted.tree"
+        all_expression=expand(config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/quant_MAGs/{sample}/{sample}.sf",sample=get_run_sample()),
+        all_classify_tsv=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_classify_wf/res.all.summary.tsv",
     output:
-        bins_classify_report=config["root"] + "/" + config["folder"]["reports"] + "/08_bins_classify.report"
+        merge_classify_report=config["root"] + "/" + config["folder"]["bins_classify"] + "/MAGs_classify_report.tsv"
     run:
-        if os.path.getsize(input.bac120_tsv) > 0:
-            bac_table = pd.read_csv(input.bac120_tsv, sep="\t")
-            print(bac_table.head)
-            bac_table = bac_table[["user_genome", "classification", "fastani_ani", "closest_placement_ani"]]
-            # final_ani 为 fastani_ani 和 closest_placement_ani 中的最大值
-            bac_table["final_ani"] = bac_table[["fastani_ani", "closest_placement_ani"]].max(axis=1)
+        def get_bins_counts_from_expression(sf, sample_name):
+            raw_df = pd.read_csv(sf,sep="\t",header=0)
+            raw_df['MAGs'] = raw_df['Name'].apply(lambda x: x.split("=")[0])
+            # Group by MAGs name, and then sum each set of NumReads
+            raw_df = raw_df.groupby(['MAGs']).agg({'NumReads': 'sum'}).reset_index()
+            raw_df.rename(columns={'NumReads': sample_name},inplace=True)
+            return raw_df
+
+
+        table = pd.DataFrame(columns=["MAGs"])
+        for raw_sf in input.all_expression:
+            sample = os.path.basename(raw_sf).split(".")[0]
+            # Merge by MAGs column
+            table = pd.merge(table,get_bins_counts_from_expression(raw_sf,sample),on='MAGs',how='outer')
+
+        classify_anno_table = pd.read_csv(input.all_classify_tsv,sep="\t",header=0)
+        table = pd.merge(table,classify_anno_table,left_on='MAGs',right_on='strain_bins',how='left')
+        table['Taxon'] = table['classification'].apply(lambda x: x.replace('d__','k__').replace(';','|'))
+        table = table[["MAGs", "Taxon"] + get_run_sample()]
+        table.rename(columns={'MAGs': 'TaxID'},inplace=True)
+        table.sort_values(by=['Taxon'],inplace=True)
+        table.to_csv(output.merge_classify_report,sep="\t",index=False)
+
+
+rule report_MAGs_classify:
+    input:
+        all_classify_tsv=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_classify_wf/res.all.summary.tsv",
+        merge_classify_report=config["root"] + "/" + config["folder"]["bins_classify"] + "/MAGs_classify_report.tsv"
+    output:
+        MAGs_classify_report=config["root"] + "/" + config["folder"]["reports"] + "/08_MAGs_classify.report"
+    params:
+        total_reads=config["root"] + "/" + config["folder"]["reports"] + "/01_rm_host.report"
+    run:
+        # Statistical recall rate
+        table = pd.DataFrame(columns=["Sample"])
+        reads_table = pd.read_csv(params.total_reads,sep="\t",header=0)
+        counts_table = pd.read_csv(input.merge_classify_report,sep="\t",header=0)
+        counts_table['k__'] = counts_table['Taxon'].apply(lambda x: x.split("|")[0].replace('k__',''))
+        counts_table = counts_table[["k__"] + get_run_sample()]
+        counts_table = counts_table.groupby(['k__']).agg('sum').T.reset_index()
+        microbe_list = counts_table.columns.tolist()[1:]
+        counts_table.rename(columns=counts_table.iloc[0]).reset_index(drop=True)
+
+        table["Sample"] = get_run_sample()
+        table = pd.merge(table,counts_table,left_on='Sample',right_on='index')
+        table = pd.merge(table,reads_table[['Unnamed: 0', 'final pair1']],left_on='Sample',right_on='Unnamed: 0')
+        table.rename(columns={'final pair1': 'Total'},inplace=True)
+        table["Unclassified"] = table["Total"] - table[microbe_list].sum(axis=1)
+
+        for i in microbe_list:
+            table[i + "_Recall(%)"] = table[i] / table["Total"]
+        table = table[["Sample", "Total", "Unclassified"] + microbe_list + [x + "_Recall(%)" for x in microbe_list]]
+        table.to_csv(output.MAGs_classify_report,sep="\t",index=False)

@@ -58,7 +58,7 @@ tar -chf $(hostname).report.tar reports/* && pigz $(hostname).report.tar && sz $
 | [megahit](https://github.com/voutcn/megahit/wiki)                                     | v1.2.9  | 组装                | 24   | <10G | <10G  | ≈30min  |
 | [prodigal](https://github.com/hyattpd/Prodigal/wiki)                                  | v2.6.3  | 预测基因              | 12   | <1G  | <1G   | ≈10min  |
 |[humman3](https://github.com/biobakery/humann) | v3.0.0  | 功能注释              | 12   | <10G | <10G  | ≈30min  |
-|[]
+|[newick_utils](https://github.com/tjunier/newick_utils) | v1.6  | phylogenetic tree  | 12   | <1G | <1G  | ≈1min  |
 
 | [metabat2](https://bitbucket.org/berkeleylab/metabat/wiki/Best%20Binning%20Practices) | v2.15   | binning           | 12   | <20G | <1G   | ≈10min  |
 | [CONCOCT](https://github.com/BinPro/CONCOCT)                                          | v1.1.0  | binning           | 12   | <1G  | <1G   | ≈30min  |

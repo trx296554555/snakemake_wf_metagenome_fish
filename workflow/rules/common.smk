@@ -88,7 +88,7 @@ def get_report():
             "enable"] else "",
         config["root"] + "/" + config["folder"]["reports"] + "/07_contigs_binning.report" if config["bins_dereplicate"][
             "enable"] else "",
-        config["root"] + "/" + config["folder"]["reports"] + "/08_bins_classify.report" if config["bins_classify"][
+        config["root"] + "/" + config["folder"]["reports"] + "/08_MAGs_classify.report" if config["bins_classify"][
             "enable"] else "",
         # TODO 需要一个清理中间文件的rule 在工作流结束后运行
     ]
