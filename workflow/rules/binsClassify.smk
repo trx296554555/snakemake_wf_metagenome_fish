@@ -74,7 +74,7 @@ rule quantify_MAGs_expression:
 
 rule gtdbtk_classify_wf:
     input:
-        mags_dir=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins",
+        mags_dir=ancient(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins"),
     output:
         ar53_tsv=config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf/res.ar53.summary.tsv",
         bac120_tsv=config["root"] + "/" + config["folder"][
