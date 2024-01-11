@@ -15,7 +15,7 @@ dependencies:
   - blast-legacy=2.2.26=h9ee0642_3
   - bzip2=1.0.8=hd590300_5
   - c-ares=1.24.0=hd590300_0
-  - ca-certificates=2023.11.17=hbcca054_0
+  - ca-certificates=2023.12.12=h06a4308_0
   - cairo=1.16.0=hb05425b_5
   - clustalo=1.2.4=hdbdd923_7
   - clustalw=2.1=h4ac6f70_9
@@ -208,6 +208,7 @@ dependencies:
   - pthread-stubs=0.4=h36c2ea0_1001
   - python=3.12.1=hab00c5b_1_cpython
   - readline=8.2=h8228510_1
+  - seqkit=2.6.1=h9ee0642_0
   - setuptools=68.2.2=pyhd8ed1ab_0
   - t-coffee=12.00.7fb08c2=h26a2512_0
   - tbl2asn-forever=25.7.2f=h031d066_4

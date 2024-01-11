@@ -79,13 +79,12 @@ rule dereplicate_bins:
         """
 
 
-rule get_MAGs:
+checkpoint get_MAGs:
     input:
         strain_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins",
         species_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins",
     output:
         mags_dir=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins"),
-        mags_done=touch(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done")
     params:
         anno_level=config["bins_dereplicate"]["anno_level"]
     shell:

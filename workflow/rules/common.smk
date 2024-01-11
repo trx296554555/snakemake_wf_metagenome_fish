@@ -91,7 +91,7 @@ def get_report():
         config["root"] + "/" + config["folder"]["reports"] + "/08_MAGs_classify.report" if config["bins_classify"][
             "enable"] else "",
         # TODO 需要一个清理中间文件的rule 在工作流结束后运行
-        config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/prokka.done"
+        config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/concatenation_prokka/prokka_protein.prune.faa"
     ]
     report_list = [i for i in report_list if i != ""]
     return report_list
