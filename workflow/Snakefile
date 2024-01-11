@@ -22,6 +22,7 @@ include: "rules/readsAnnotation.smk"
 include: "rules/contigsBinning.smk"
 include: "rules/binsRefine.smk"
 include: "rules/binsClassify.smk"
+include: "rules/binsAnnotation.smk"
 
 
 rule all:

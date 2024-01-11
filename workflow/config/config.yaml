@@ -25,7 +25,7 @@ co_assemble:
 contigs_binning:
     enable: True
 bins_dereplicate:
-    enable: True
+    enable: False
     anno_level: strain
 bins_classify:
     enable: True
@@ -65,10 +65,8 @@ folder:
     bins_refine: 08_bin_refine
     bins_dereplication: 09_dereplication
     bins_classify: 10_bin_classify
+    bins_anno_prokka: 11_bin_annotation/00_prokka
     bins_gene_quant: 11_bin_annotation/01_gene_quant
     bins_anno_rgi: 11_bin_annotation/02_rgi
     bins_anno_dbcan: 11_bin_annotation/03_dbcan
     bins_anno_vfdb: 11_bin_annotation/04_vfdb
-    bins_anno_prokka: 11_bin_annotation/05_prokka
-
-
