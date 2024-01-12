@@ -41,7 +41,7 @@ exit 1
 fi
 
 # Check whether the vfdb database already exists
-if [ -f "${db_root}"/"${vfdb_db}" ];then
+if [ -d "${db_root}"/"${vfdb_db}" ];then
   echo "The vfdb database already exists, location：${db_root}/${vfdb_db}" >> "${root_path}"/logs/env.log
   echo "But diamond need a perfectly matched version of the database, so check version and rebuild the db if error occurs" >> "${root_path}"/logs/env.log
 else
