@@ -37,8 +37,10 @@ rule get_MAGs_salmon_index:
         "18.2 Indexing of MAGs"
     threads:
         12
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["bins_dereplication"] + "/mags_salmon_index.log"
     log:
-        config["root"] + "/" + config["folder"]["bins_dereplication"] + "/concatenation_MAGs/salmon_index.log"
+        config["root"] + "/" + config["folder"]["bins_dereplication"] + "/concatenation_MAGs/mags_salmon_index.log"
     shell:
         """
         salmon index -t {input.concatenation_MAGs_fa} -i {output.index} -p {threads} > {log} 2>&1
@@ -57,7 +59,7 @@ rule quantify_MAGs_expression:
     threads:
         12
     benchmark:
-        config["root"] + "/benchmark/" + config["folder"]["bins_classify"] + "/quant_MAGs/{sample}/{sample}.quant.log"
+        config["root"] + "/benchmark/" + config["folder"]["bins_classify"] + "/quant_MAGs/{sample}.quant.log"
     log:
         config["root"] + "/" + config["folder"]["bins_classify"] + "/quant_MAGs/{sample}/{sample}.quant.log"
     message:
@@ -97,9 +99,9 @@ rule gtdbtk_classify_wf:
         out_dir=config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf",
         prefix="gtdbtk"
     benchmark:
-        config["root"] + "/benchmark/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf.benchmark.txt"
+        config["root"] + "/benchmark/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf.log"
     log:
-        config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify.log"
+        config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_classify_wf.log"
     shell:
         """
         gtdbtk classify_wf --cpus {threads} --genome_dir {input.mags_dir} --out_dir {params.out_dir} \
@@ -150,7 +152,7 @@ rule gtdbtk_infer_MAGs_tree:
     params:
         user_tree_dir=config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_mag_tree/user_tree",
     benchmark:
-        config["root"] + "/benchmark/" + config["folder"]["bins_classify"] + "/gtdbtk_infer_mag_tree.benchmark.txt"
+        config["root"] + "/benchmark/" + config["folder"]["bins_classify"] + "/gtdbtk_infer_mag_tree.log"
     log:
         config["root"] + "/" + config["folder"]["bins_classify"] + "/gtdbtk_infer_mag_tree.log"
     shell:

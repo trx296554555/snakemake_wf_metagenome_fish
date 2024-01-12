@@ -65,7 +65,7 @@ rule dereplicate_bins:
     params:
         comp=70,con=10,strain_ANI=0.99,species_ANI=0.95,nc=0.1,
     benchmark:
-        config["root"] + "/benchmark/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.benchmark.txt"
+        config["root"] + "/benchmark/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.log"
     log:
         config["root"] + "/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.log"
     threads:

@@ -278,14 +278,16 @@ rule get_reads_vfdb_annotation:
         12
     params:
         db=config["db_root"] + "/" + config["db"]["vfdb"],
+        diamond="VF_full_db.dmnd",
+        id="80%",cover="70%",evalue="1e-5",
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["reads_anno_vfdb"] + "/{sample}.vfdb.log"
     log:
         config["root"] + "/" + config["folder"]["reads_anno_vfdb"] + "/{sample}/{sample}.vfdb.log"
     shell:
         """
-        diamond blastp -d {params.db} -q {input.proteins} -o {output.vfdb_anno} \
-        -f 6 -p {threads} --id 80% --query-cover 70% --evalue 1e-5 > {log} 2>&1
+        diamond blastp -d {params.db}/{params.diamond} -q {input.proteins} -o {output.vfdb_anno} \
+        -f 6 -p {threads} --id {params.id} --query-cover {params.cover} --evalue {params.evalue} > {log} 2>&1
         """
 
 
@@ -325,7 +327,7 @@ rule merge_reads_vfdb_report:
         """
 
 
-def get_annotation_res():
+def get_reads_annotation_res():
     anno_res = {}
     if config["reads_anno"]["huamnn3_enable"]:
         anno_res['humann3'] = [
@@ -345,7 +347,7 @@ def get_annotation_res():
 
 rule report_reads_annotation:
     input:
-        **get_annotation_res()
+        **get_reads_annotation_res()
     output:
         config["root"] + "/" + config["folder"]["reports"] + "/06_reads_annotation.report"
     run:

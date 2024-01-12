@@ -72,6 +72,8 @@ def get_co_item():
 def get_report():
     reads_anno_enable = config["reads_anno"]["huamnn3_enable"] or config["reads_anno"]["rgi_enable"] or \
                         config["reads_anno"]["dbcan_enable"] or config["reads_anno"]["vfdb_enable"]
+    mags_anno_enable = config["bins_anno"]["rgi_enable"] or config["bins_anno"]["dbcan_enable"] or \
+                       config["bins_anno"]["vfdb_enable"]
     report_list = [
         config["root"] + "/" + config["folder"]["logs"] + "/01_check_run.log",
         config["root"] + "/" + config["folder"]["reports"] + "/01_rm_host.report",
@@ -90,8 +92,8 @@ def get_report():
             "enable"] else "",
         config["root"] + "/" + config["folder"]["reports"] + "/08_MAGs_classify.report" if config["bins_classify"][
             "enable"] else "",
+        config["root"] + "/" + config["folder"]["reports"] + "/10_bin_annotation.report" if mags_anno_enable else "",
         # TODO 需要一个清理中间文件的rule 在工作流结束后运行
-        config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/concatenation_prokka/prokka_protein.prune.faa"
     ]
     report_list = [i for i in report_list if i != ""]
     return report_list

@@ -14,13 +14,6 @@ vfdb_db=$(awk -F ': ' '/    vfdb:/{print $2}' "${config_path}"/config.yaml)
   echo "---------------------------"
 } >> "${root_path}"/logs/env.log
 
-# 原有run_dbcan脚本的线程限制有问题，暂时使用自己修改的版本替代 TODO 后续可能会改回正式版 在她修复之后
-if [ -f "${root_path}"/workflow/scripts/dbcan4_revise/run_dbcan.py ];then
-  mv $CONDA_PREFIX/lib/python3.8/site-packages/dbcan_cli/run_dbcan.py $CONDA_PREFIX/lib/python3.8/site-packages/dbcan_cli/run_dbcan_bak.py
-  cp "${root_path}"/workflow/scripts/dbcan4_revise/run_dbcan.py $CONDA_PREFIX/lib/python3.8/site-packages/dbcan_cli/run_dbcan.py
-  cp -f "${root_path}"/workflow/scripts/dbcan4_revise/hmmer_parser.py $CONDA_PREFIX/lib/python3.8/site-packages/dbcan_cli/hmmer_parser.py
-fi
-
 # Check whether the dbcan4 database already exists
 if [ -d "${db_root}"/"${dbcan_db}" ];then
   echo "The dbcan4 database already exists, location：${db_root}/${dbcan_db}" >> "${root_path}"/logs/env.log
@@ -31,18 +24,17 @@ cat >> "${root_path}"/logs/env.log <<EOF
   ------------------------------------------------------------
   test -d "${db_root}"/"${dbcan_db}" || mkdir "${db_root}"/"${dbcan_db}" \
   cd "${db_root}"/"${dbcan_db}" \
-  && wget http://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08012023.tsv \
-	&& wget http://bcb.unl.edu/dbCAN2/download/Databases/PUL_12112023.faa && mv PUL_12112023.faa PUL.faa && makeblastdb -in PUL.faa -dbtype prot \
-	&& wget http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_12-12-2023.xlsx \
-  && wget http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_12-12-2023.txt \
-	&& wget http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz && tar xvf dbCAN-PUL.tar.gz \
-  && wget https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN_sub.hmm && hmmpress dbCAN_sub.hmm \
-  && wget https://bcb.unl.edu/dbCAN2/download/Databases/V12/CAZyDB.07262023.fa && diamond makedb --in CAZyDB.07262023.fa -d CAZy \
-  && wget https://bcb.unl.edu/dbCAN2/download/Databases/V12/dbCAN-HMMdb-V12.txt && mv dbCAN-HMMdb-V12.txt dbCAN.txt && hmmpress dbCAN.txt \
-  && wget https://bcb.unl.edu/dbCAN2/download/Databases/V12/tcdb.fa && diamond makedb --in tcdb.fa -d tcdb \
-  && wget http://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-1.hmm && hmmpress tf-1.hmm \
-  && wget http://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-2.hmm && hmmpress tf-2.hmm \
-  && wget https://bcb.unl.edu/dbCAN2/download/Databases/V12/stp.hmm && hmmpress stp.hmm \
+  && wget http://bcb.unl.edu/dbCAN2/download/Databases/fam-substrate-mapping-08012023.tsv && mv fam-substrate-mapping-08012023.tsv fam-substrate-mapping.tsv \
+    && wget http://bcb.unl.edu/dbCAN2/download/Databases/PUL.faa && makeblastdb -in PUL.faa -dbtype prot \
+    && wget http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL_12-12-2023.xlsx && mv dbCAN-PUL_12-12-2023.xlsx dbCAN-PUL.xlsx \
+    && wget http://bcb.unl.edu/dbCAN2/download/Databases/dbCAN-PUL.tar.gz && tar xvf dbCAN-PUL.tar.gz && rm dbCAN-PUL.tar.gz \
+    && wget https://bcb.unl.edu/dbCAN2/download/Databases/dbCAN_sub.hmm && hmmpress dbCAN_sub.hmm \
+    && wget https://bcb.unl.edu/dbCAN2/download/Databases/V12/CAZyDB.07262023.fa && mv CAZyDB.07262023.fa CAZyDB.fa  && diamond makedb --in CAZyDB.fa -d CAZy \
+    && wget https://bcb.unl.edu/dbCAN2/download/Databases/V12/dbCAN-HMMdb-V12.txt && mv dbCAN-HMMdb-V12.txt dbCAN.txt && hmmpress dbCAN.txt \
+    && wget https://bcb.unl.edu/dbCAN2/download/Databases/V12/tcdb.fa && diamond makedb --in tcdb.fa -d tcdb \
+    && wget http://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-1.hmm && hmmpress tf-1.hmm \
+    && wget http://bcb.unl.edu/dbCAN2/download/Databases/V12/tf-2.hmm && hmmpress tf-2.hmm \
+    && wget https://bcb.unl.edu/dbCAN2/download/Databases/V12/stp.hmm && hmmpress stp.hmm
   ------------------------------------------------------------
 EOF
 exit 1

@@ -29,6 +29,12 @@ bins_dereplicate:
     anno_level: strain
 bins_classify:
     enable: True
+bins_anno:
+    prokka_enable: False
+    rgi_enable: True
+    dbcan_enable: True
+    vfdb_enable: True
+    eggnog_enable: False
 # Database
 db_root: /home/user002/database
 db:
@@ -37,7 +43,7 @@ db:
     humann_uniref: humann3_20231017_db/uniref
     humann_utility_mapping: humann3_20231017_db/utility_mapping
     metaphlan: metaphlan_20231214_db
-    vfdb: vf_20230915_db/VF_full_db.dmnd
+    vfdb: vf_20230915_db
     rgi: card_20231214_db
     dbcan: dbcan_20231214_db
     checkm: checkm_20150116_db
