@@ -92,6 +92,8 @@ def get_report():
             "enable"] else "",
         config["root"] + "/" + config["folder"]["reports"] + "/08_MAGs_classify.report" if config["bins_classify"][
             "enable"] else "",
+        config["root"] + "/" + config["folder"]["reports"] + "/09_new_MAGs.report" if config["bins_anno"][
+            "prokka_enable"] else "",
         config["root"] + "/" + config["folder"]["reports"] + "/10_bin_annotation.report" if mags_anno_enable else "",
         # TODO 需要一个清理中间文件的rule 在工作流结束后运行
     ]

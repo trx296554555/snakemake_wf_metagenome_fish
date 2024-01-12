@@ -1,5 +1,3 @@
-## TODO 统计MAGs 大小，N50，编码蛋白数量
-# new_MAGs_report = config["root"] + "/" + config["folder"]["reports"] + "/08_new_MAGs.report",
 rule get_MAGs_prokka_anno:
     input:
         mag=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins/{bin}.fa",
@@ -8,7 +6,7 @@ rule get_MAGs_prokka_anno:
     output:
         genes=config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/{bin}/{bin}.gene.fa",
         proteins=config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/{bin}/{bin}.protein.faa",
-        prokka_anno=config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/{bin}/{bin}.prokka.txt",
+        stats=config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/{bin}/{bin}.stat",
     conda:
         config["root"] + "/" + config["envs"] + "/" + "prokka.yaml"
     message:
@@ -37,8 +35,50 @@ rule get_MAGs_prokka_anno:
         --locustag fish_bin_${{new_id}} --centre '' --compliant {input.mag} > /dev/null 2>&1
         seqkit replace --quiet -p ".*" -r ${{raw_id}}_{{nr}} -w 0 {params.out_dir}/{wildcards.bin}.ffn > {output.genes}
         seqkit replace --quiet -p ".*" -r ${{raw_id}}_{{nr}} -w 0 {params.out_dir}/{wildcards.bin}.faa > {output.proteins}
-        ln -s {params.out_dir}/{wildcards.bin}.txt {output.prokka_anno}
+        {{ seqkit stats --threads {threads} -a -T {input.mag}; cat {params.out_dir}/{wildcards.bin}.txt; }} > {output.stats}
         """
+
+
+def collect_MAGs_gene_info(wildcards):
+    mag_bins_dir = checkpoints.get_MAGs.get(**wildcards).output.mags_dir
+    mag_bins = glob.glob(mag_bins_dir + "/*.f*a")
+    mag_names = [os.path.basename(x).replace('.fa','') for x in mag_bins]
+    gene_info = [os.path.join(config["root"],config["folder"]["bins_anno_prokka"],bin,bin + ".stat") for bin in
+                 mag_names]
+    return {"gene_info": gene_info}
+
+
+rule report_new_MAGs:
+    input:
+        unpack(collect_MAGs_gene_info),
+        all_classify_tsv=config["root"] + "/" + config["folder"][
+            "bins_classify"] + "/gtdbtk_classify_wf/res.all.summary.tsv",
+    output:
+        new_MAGs_report=config["root"] + "/" + config["folder"]["reports"] + "/09_new_MAGs.report",
+    run:
+        all_stat = {}
+        for stat_file in input.gene_info:
+            bin_name = os.path.basename(stat_file).replace(".stat","")
+            stat_dict = {}
+            with open(stat_file,"r") as f:
+                mag_stat_title = next(f).strip().split("\t")
+                mag_stat_info = next(f).strip().split("\t")
+                for i in range(len(mag_stat_title)):
+                    stat_dict[mag_stat_title[i]] = mag_stat_info[i]
+                for line in f:
+                    line = line.strip().split(": ")
+                    stat_dict[line[0]] = line[1]
+            all_stat[bin_name] = stat_dict
+        stat_table = pd.DataFrame(all_stat).T
+        stat_table = stat_table[["contigs", "bases", "gene", "CDS", "tRNA", "tmRNA", "rRNA", "repeat_region", "N50", "GC(%)"]]
+        stat_table.fillna(0,inplace=True)
+        table = pd.read_csv(input.all_classify_tsv,sep="\t",header=0)
+        # table 的strain_bins列 设置为索引且保留
+        table = table.set_index("strain_bins")
+        table = pd.concat([table,stat_table],axis=1)
+        table = table.reset_index()
+        table = table.rename(columns={"index":"strain_bins"})
+        table.to_csv(output.new_MAGs_report,sep="\t",header=True,index=False)
 
 
 def collect_MAGs(wildcards):
@@ -72,7 +112,8 @@ rule pruning_MAGs_gene_redundancy:
     output:
         genes=config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/all_mags/all_mags_gene.prune.fa",
         proteins=config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/all_mags/all_mags_protein.prune.faa",
-        cluster_file=config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/all_mags/all_mags_gene.prune.fa.clstr",
+        cluster_file=config["root"] + "/" + config["folder"][
+            "bins_anno_prokka"] + "/all_mags/all_mags_gene.prune.fa.clstr",
     message:
         "21: Pruning redundancy genes from all mag bins"
     conda:
@@ -293,7 +334,7 @@ rule get_MAGs_vfdb_annotation:
     params:
         db=config["db_root"] + "/" + config["db"]["vfdb"],
         diamond="VF_full_db.dmnd",
-        id="80%", cover="70%", evalue="1e-5",
+        id="80%",cover="70%",evalue="1e-5",
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["bins_anno_vfdb"] + "/all_mags.vfdb.annotation.log"
     log:
@@ -356,7 +397,7 @@ rule report_MAGs_annotation:
     input:
         **get_MAGs_annotation_res()
     output:
-        config["root"] + "/" + config["folder"]["reports"] + "/10_bin_annotation.report"
+        MAGs_annotation_report=config["root"] + "/" + config["folder"]["reports"] + "/10_bin_annotation.report"
     run:
         anno_info_path = config["root"] + "/" + config["folder"]["reports"] + "/10_bin_annotation_info"
         info_dict = {
@@ -375,6 +416,7 @@ rule report_MAGs_annotation:
             tmp_df[num] = df.apply(lambda x: len(x[x > 0]),axis=0)
             return tmp_df.T
 
+
         def statistical_humann_res(input_file, db_name):
             df = pd.read_csv(input_file,sep="\t",index_col=0)
             unclassified = str(db_name + "_unclassified_COUNT")
@@ -391,13 +433,13 @@ rule report_MAGs_annotation:
             os.makedirs(anno_info_path)
         res_df = pd.DataFrame()
         for db in input.keys():
-            shutil.copy(info_dict[db], anno_info_path)
+            shutil.copy(info_dict[db],anno_info_path)
             if db == "humann3":
                 for i in input[db]:
                     sub_db = os.path.basename(i).replace("_clean.tsv","").replace("all_","")
                     df_stat = statistical_humann_res(i,sub_db)
                     res_df = pd.concat([res_df, df_stat],axis=0)
             else:
-                df_stat = statistical_other_res(input[db], db)
+                df_stat = statistical_other_res(input[db],db)
                 res_df = pd.concat([res_df, df_stat],axis=0)
-        res_df.to_csv(output[0],sep="\t",header=True,index=True)
+        res_df.to_csv(output.MAGs_annotation_report,sep="\t",header=True,index=True)
