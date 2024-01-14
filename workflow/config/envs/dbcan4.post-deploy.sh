@@ -14,6 +14,13 @@ vfdb_db=$(awk -F ': ' '/    vfdb:/{print $2}' "${config_path}"/config.yaml)
   echo "---------------------------"
 } >> "${root_path}"/logs/env.log
 
+# 原有run_dbcan脚本的线程限制有问题，暂时使用自己修改的版本替代
+# TODO 后续可能会改回正式版 在她修复之后 20240114 仍然没修复
+if [ -f "${root_path}"/workflow/scripts/run_dbcan.py ];then
+  mv $CONDA_PREFIX/lib/python3.8/site-packages/dbcan/cli/run_dbcan.py $CONDA_PREFIX/lib/python3.8/site-packages/dbcan/cli/run_dbcan_bak.py
+  cp "${root_path}"/workflow/scripts/run_dbcan.py $CONDA_PREFIX/lib/python3.8/site-packages/dbcan/cli/run_dbcan.py
+fi
+
 # Check whether the dbcan4 database already exists
 if [ -d "${db_root}"/"${dbcan_db}" ];then
   echo "The dbcan4 database already exists, location：${db_root}/${dbcan_db}" >> "${root_path}"/logs/env.log
