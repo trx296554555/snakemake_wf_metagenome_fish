@@ -3,6 +3,8 @@ import os
 import re
 import argparse
 
+import pandas as pd
+
 
 def read_quant_file(quant_file):
     dict_quant = {}
@@ -46,7 +48,7 @@ def read_dbcan_file(dbcan_file, dict_info, only_one=False):
                 # 判断res中是否有至少两个软件比对结果一致的term
                 dbcan_id = set([i for i in all_term if all_term.count(i) > 1])
             if orf_id in dict_info and dbcan_id:
-                id_count = dict_info[orf_id]/len(dbcan_id)
+                id_count = dict_info[orf_id] / len(dbcan_id)
                 for id in dbcan_id:
                     if id not in dict_data:
                         count = id_count
@@ -92,15 +94,52 @@ def read_vfdb_file(vfdb_file, dict_info):
     return dict_data
 
 
-def read_anno_file(anno_file, anno_type, counts_info):
+def read_eggnog_file(eggnog_file, dict_info, col_name):
+    dict_data = {}
+
+    anno_table = pd.read_csv(eggnog_file, header=0, index_col=0, sep='\t')
+    if col_name not in anno_table.columns:
+        raise Exception('Error: The column name of annotation file is not exist')
+    # 取出指定的列并去掉值为-的行
+    anno_table = anno_table[[col_name]]
+    anno_table = anno_table[anno_table[col_name] != '-']
+
+    # 将anno_table和count_table合并
+    anno_table['query_id'] = anno_table.index
+    count_table = pd.DataFrame.from_dict(dict_info, orient='index', columns=['count'])
+    anno_table = pd.merge(anno_table, count_table, left_on='query_id', right_index=True)
+
+    # 将每行按col_name列拆分为多个term，以,为分隔符
+    anno_table[col_name] = anno_table[col_name].str.split(',')
+
+    # 只保留分割后中含有Archaea或Bacteria，且含有COG的term
+    if col_name == 'eggNOG_OGs':
+        anno_table[col_name] = anno_table[col_name].apply(lambda x: [i for i in x if 'Archaea' in i or 'Bacteria' in i])
+        anno_table[col_name] = anno_table[col_name].apply(lambda x: [i for i in x if 'COG' in i])
+    # 按照字符再次拆分每个字符分别为一个term
+    elif col_name == 'COG_category':
+        anno_table[col_name] = anno_table[col_name].apply(lambda x: [i for i in x[0] if i != ''])
+
+    anno_table['anno_num'] = anno_table[col_name].apply(lambda x: len(x))
+    anno_table['each_count'] = anno_table['count'] / anno_table['anno_num']
+    anno_table = anno_table.explode(col_name)
+    anno_table.reset_index(drop=True, inplace=True)
+
+    # 以col_name列为分组，将each_count列的值相加
+    anno_table = anno_table.groupby(col_name)['each_count'].sum().reset_index()
+    return anno_table
+
+def read_anno_file(anno_file, anno_type, counts_info, col_name=None):
     if anno_type == 'dbcan':
         res_dict = read_dbcan_file(anno_file, counts_info)
     elif anno_type == 'rgi':
         res_dict = read_rgi_file(anno_file, counts_info)
     elif anno_type == 'vfdb':
         res_dict = read_vfdb_file(anno_file, counts_info)
+    elif anno_type == 'eggnog':
+        res_dict = read_eggnog_file(anno_file, counts_info, col_name)
     else:
-        raise Exception('Error: Please input the correct type of annotation [rgi/vfdb/dbcan]')
+        raise Exception('Error: Please input the correct type of annotation [rgi/vfdb/dbcan/eggnog]')
     return res_dict
 
 
@@ -112,17 +151,28 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', '--quant_file', dest='q_file', required=True, help='input the quant result file')
     parser.add_argument('-a', '--anno_file', dest='a_file', required=True, help='input the annotation result file')
-    parser.add_argument('-t', '--type', dest='anno_type', required=True,
-                        help='input the type of annotation [rgi/vfdb/dbcan]')
+    parser.add_argument('-t', '--type', dest='anno_type', required=True, choices=['rgi', 'vfdb', 'dbcan', 'eggnog'],
+                        help='input the type of annotation [rgi/vfdb/dbcan/eggnog]')
+    parser.add_argument('-c', '--col_name', dest='col_name', required=False,
+                        help='input the column name of annotation file', default=None)
     parser.add_argument('-o', '--output', dest='o_file', required=True, help='input the output file')
     args = parser.parse_args()
+
+    if args.anno_type == 'eggnog' and not args.col_name:
+        raise Exception('Error: Please input the column name of annotation file when the type is eggnog')
 
     # read quant file counts info
     counts_info = read_quant_file(args.q_file)
     # read annotation file and join quant value
-    anno_quant_dict = read_anno_file(args.a_file, args.anno_type, counts_info)
+    anno_quant_res = read_anno_file(args.a_file, args.anno_type, counts_info, args.col_name)
 
-    with open(args.o_file, 'w', errors='ignore') as output:
-        output.writelines('Sample\t' + os.path.basename(args.q_file).split('.')[0] + '\n')
-        for value in anno_quant_dict.values():
-            output.writelines('\t'.join(value) + '\n')
+    if type(anno_quant_res) == dict:
+        with open(args.o_file, 'w', errors='ignore') as output:
+            output.writelines('Sample\t' + os.path.basename(args.q_file).split('.')[0] + '\n')
+            for value in anno_quant_res.values():
+                output.writelines('\t'.join(value) + '\n')
+    elif type(anno_quant_res) == pd.DataFrame:
+        anno_quant_res.columns = ['Sample', os.path.basename(args.q_file).split('.')[0]]
+        anno_quant_res.to_csv(args.o_file, sep='\t', index=False, float_format='%.6f')
+    else:
+        raise Exception('Error: The type of annotation result is not correct')

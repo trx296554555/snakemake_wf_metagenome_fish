@@ -342,7 +342,7 @@ rule get_MAGs_vfdb_annotation:
     shell:
         """
         diamond blastp -d {params.db}/{params.diamond} -q {input.proteins} -o {output.vfdb_anno} \
-        -f 6 -p {threads} --id {params.id} --query-cover {params.cover} --evalue {params.evalue} > {log} 2>&1
+        -f 6 -p {threads} --id {params.id} --very-sensitive --query-cover {params.cover} --evalue {params.evalue} > {log} 2>&1
         """
 
 
@@ -382,6 +382,107 @@ rule merge_MAGs_vfdb_report:
         """
 
 
+rule get_MAGs_eggnog_annotation:
+    input:
+        proteins=config["root"] + "/" + config["folder"]["bins_anno_prokka"] + "/all_mags/all_mags_protein.prune.faa",
+    output:
+        eggnog_anno=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/annotation/all_mags.eggnog.anno",
+    message:
+        "26.1: Run eggnog-mapper to generate eggnog annotation -------------------------"
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "emapper.yaml"
+    threads:
+        80
+    params:
+        db=config["db_root"] + "/" + config["db"]["eggnog"],
+        out_dir=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/annotation/",
+        sensmode="very-sensitive",tax_scope="Archaea,Bacteria",
+        prefix="all_mags",
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["bins_anno_eggnog"] + "/all_mags.eggnog.annotation.log"
+    log:
+        config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/annotation/all_mags.eggnog.annotation.log"
+    shell:
+        """
+        emapper.py -m diamond --itype proteins --data_dir {params.db} \
+        --sensmode {params.sensmode} --dbmem --override --tax_scope {params.tax_scope} \
+        --cpu {threads} -i {input.proteins} --output_dir {params.out_dir} -o {params.prefix} > {log} 2>&1
+        grep -v "^##" {params.out_dir}/{params.prefix}.emapper.annotations > {output.eggnog_anno}
+        """
+
+
+rule generate_MAGs_eggnog_report:
+    input:
+        eggnog_anno=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/annotation/all_mags.eggnog.anno",
+        expression=config["root"] + "/" + config["folder"]["bins_gene_quant"] + "/{sample}/{sample}.sf"
+    output:
+        eggnog_go_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.go.tsv",
+        eggnog_ko_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.ko.tsv",
+        eggnog_cog_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.cog.tsv",
+        eggnog_cog_cate_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.cog_cate.tsv",
+        eggnog_pref_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.pref.tsv",
+    message:
+        "26.2: Combine quantification and annotation results to generate eggnog reports------------------------"
+    params:
+        script=config["root"] + "/workflow/scripts/salmon_anno_integration.py"
+    shell:
+        """
+        python {params.script} -q {input.expression} -a {input.eggnog_anno} -t eggnog -c GOs -o {output.eggnog_go_tsv}
+        python {params.script} -q {input.expression} -a {input.eggnog_anno} -t eggnog -c KEGG_ko -o {output.eggnog_ko_tsv}
+        python {params.script} -q {input.expression} -a {input.eggnog_anno} -t eggnog -c eggNOG_OGs -o {output.eggnog_cog_tsv}
+        python {params.script} -q {input.expression} -a {input.eggnog_anno} -t eggnog -c COG_category -o {output.eggnog_cog_cate_tsv}
+        python {params.script} -q {input.expression} -a {input.eggnog_anno} -t eggnog -c Preferred_name -o {output.eggnog_pref_tsv}
+        """
+
+
+rule merge_MAGs_eggnog_report:
+    input:
+        all_go_tsv=expand(config["root"] + "/" + config["folder"][
+            "bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.go.tsv",sample=get_run_sample()),
+        all_ko_tsv=expand(config["root"] + "/" + config["folder"][
+            "bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.ko.tsv",sample=get_run_sample()),
+        all_cog_tsv=expand(config["root"] + "/" + config["folder"][
+            "bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.cog.tsv",sample=get_run_sample()),
+        all_cog_cate_tsv=expand(config["root"] + "/" + config["folder"][
+            "bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.cog_cate.tsv",sample=get_run_sample()),
+        all_pref_tsv=expand(config["root"] + "/" + config["folder"][
+            "bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.pref.tsv",sample=get_run_sample()),
+    output:
+        merge_go_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.go.tsv",
+        merge_ko_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.ko.tsv",
+        merge_cog_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.cog.tsv",
+        merge_cog_cate_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.cog_cate.tsv",
+        merge_pref_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.pref.tsv",
+    message:
+        "26.3: Merge eggnog reports -------------------------"
+    params:
+        script=config["root"] + "/workflow/scripts/join_tables.py",
+        tmp_dir=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/tmp"
+    shell:
+        """
+        mkdir -p {params.tmp_dir}
+        for res in {input.all_go_tsv}; do ln -sf $res {params.tmp_dir}; done
+        python {params.script} -i {params.tmp_dir} -o {output.merge_go_tsv}
+        rm -rf {params.tmp_dir}
+        mkdir -p {params.tmp_dir}
+        for res in {input.all_ko_tsv}; do ln -sf $res {params.tmp_dir}; done
+        python {params.script} -i {params.tmp_dir} -o {output.merge_ko_tsv}
+        rm -rf {params.tmp_dir}
+        mkdir -p {params.tmp_dir}
+        for res in {input.all_cog_tsv}; do ln -sf $res {params.tmp_dir}; done
+        python {params.script} -i {params.tmp_dir} -o {output.merge_cog_tsv}
+        rm -rf {params.tmp_dir}
+        mkdir -p {params.tmp_dir}
+        for res in {input.all_cog_cate_tsv}; do ln -sf $res {params.tmp_dir}; done
+        python {params.script} -i {params.tmp_dir} -o {output.merge_cog_cate_tsv}
+        rm -rf {params.tmp_dir}
+        mkdir -p {params.tmp_dir}
+        for res in {input.all_pref_tsv}; do ln -sf $res {params.tmp_dir}; done
+        python {params.script} -i {params.tmp_dir} -o {output.merge_pref_tsv}
+        rm -rf {params.tmp_dir}
+        """
+
+
 def get_MAGs_annotation_res():
     anno_res = {}
     if config["bins_anno"]["rgi_enable"]:
@@ -390,6 +491,12 @@ def get_MAGs_annotation_res():
         anno_res['dbcan'] = config["root"] + "/" + config["folder"]["bins_anno_dbcan"] + "/all.dbcan.tsv"
     if config["bins_anno"]["vfdb_enable"]:
         anno_res['vfdb'] = config["root"] + "/" + config["folder"]["bins_anno_vfdb"] + "/all.vfdb.tsv"
+    if config["bins_anno"]["eggnog_enable"]:
+        anno_res['eggnog_go'] = config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.go.tsv"
+        anno_res['eggnog_ko'] = config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.ko.tsv"
+        anno_res['eggnog_cog'] = config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.cog.tsv"
+        anno_res['eggnog_cog_cate'] = config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.cog_cate.tsv"
+        anno_res['eggnog_pref'] = config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/all.pref.tsv"
     return anno_res
 
 
@@ -433,7 +540,8 @@ rule report_MAGs_annotation:
             os.makedirs(anno_info_path)
         res_df = pd.DataFrame()
         for db in input.keys():
-            shutil.copy(info_dict[db],anno_info_path)
+            if db in info_dict.keys():
+                shutil.copy(info_dict[db],anno_info_path)
             if db == "humann3":
                 for i in input[db]:
                     sub_db = os.path.basename(i).replace("_clean.tsv","").replace("all_","")

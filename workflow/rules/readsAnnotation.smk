@@ -287,7 +287,7 @@ rule get_reads_vfdb_annotation:
     shell:
         """
         diamond blastp -d {params.db}/{params.diamond} -q {input.proteins} -o {output.vfdb_anno} \
-        -f 6 -p {threads} --id {params.id} --query-cover {params.cover} --evalue {params.evalue} > {log} 2>&1
+        -f 6 -p {threads} --id {params.id} --very-sensitive --query-cover {params.cover} --evalue {params.evalue} > {log} 2>&1
         """
 
 

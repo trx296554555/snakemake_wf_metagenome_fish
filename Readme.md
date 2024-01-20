@@ -44,6 +44,7 @@ ctrl + a + d
 snakemake --forceall --rulegraph |sed '1d'| dot -Tpdf > fish_rules.pdf
 tar -chf $(hostname).all_bins.tar all_bins/*.fa && pigz $(hostname).all_bins.tar
 tar -chf $(hostname).report.tar reports/* && pigz $(hostname).report.tar && sz $(hostname).report.tar.gz && rm -f $(hostname).report.tar.gz 
+cd /home/user003/fish/10_bin_classify/ && cp MAGs_classify_report.tsv $(hostname).MAGs_classify_report.tsv && sz $(hostname).MAGs_classify_report.tsv && rm -f $(hostname).MAGs_classify_report.tsv
 ```
 
 ---

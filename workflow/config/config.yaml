@@ -34,7 +34,7 @@ bins_anno:
     rgi_enable: True
     dbcan_enable: True
     vfdb_enable: True
-    eggnog_enable: False
+    eggnog_enable: True
 # Database
 db_root: /home/user002/database
 db:
@@ -46,6 +46,7 @@ db:
     vfdb: vf_20230915_db
     rgi: card_20231214_db
     dbcan: dbcan_20231214_db
+    eggnog: eggnog_20240116_db
     checkm: checkm_20150116_db
     gtdbtk: gtdbtk_20231214_db
     taxonkit: taxonkit_20240108_db
@@ -76,3 +77,4 @@ folder:
     bins_anno_rgi: 11_bin_annotation/02_rgi
     bins_anno_dbcan: 11_bin_annotation/03_dbcan
     bins_anno_vfdb: 11_bin_annotation/04_vfdb
+    bins_anno_eggnog: 11_bin_annotation/05_eggnog
