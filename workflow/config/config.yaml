@@ -30,7 +30,7 @@ bins_dereplicate:
 bins_classify:
     enable: True
 bins_anno:
-    prokka_enable: True
+    prokka_enable: False
     rgi_enable: True
     dbcan_enable: True
     vfdb_enable: True
