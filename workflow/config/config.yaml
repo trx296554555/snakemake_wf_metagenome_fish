@@ -61,6 +61,7 @@ folder:
     rm_host: 01_remove_host
     reads_classify: 02_kraken2
     mitogenome: 03_host_mitogenome
+    mitotree: 03_mitotree
     assemble_contigs: 04_megahit
     gene_prediction: 05_prodigal
     reads_anno_humann3: 06_reads_annotation/00_humann3

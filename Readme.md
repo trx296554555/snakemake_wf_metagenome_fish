@@ -73,13 +73,18 @@ tar -chf bin_anno.tar 00_prokka/all_mags/*prune* */annotation && pigz bin_anno.t
 | [GTDB-Tk](https://github.com/Ecogenomics/GTDBTk)                                      | v2.3.2  | bin taxonomy      | 12   | <10G | <1G   | ≈10min  |
 | [prokka](https://github.com/tseemann/prokka)                                          | v1.14.6 | bins功能注释          | 12   | <10G | <1G   | ≈10min  |
 | [seqkit](https://bioinf.shenwei.me/seqkit/)                                           | v2.6.1  | 序列处理              | 12   | <1G  | <1G   | ≈1min   |
+| [muscle](https://github.com/rcedgar/muscle)                                           | v5.1    | 序列比对              | 12   | <1G  | <1G   | ≈1min   |
+| [MACSE](https://www.agap-ge2pop.org/macse/)                                           | v2.07   | refine MSA        | 12   | <1G  | <1G   | ≈1min   |
+| [trimAl](http://trimal.cgenomics.org/use_of_the_command_line_trimal_v1.2)             | v1.4.1  | MSA修剪             | 12   | <1G  | <1G   | ≈1min   |
+| [iqtree](https://github.com/iqtree/iqtree2)                                           | v2.2.6  | phylogenetic tree | 12   | <1G  | <1G   | ≈1min   |
+| [ASTER]（https://github.com/chaoszhang/ASTER）                                          | v1.16   | species tree      | 12   | <1G  | <1G   | ≈1min   |
 | [newick_utils](https://github.com/tjunier/newick_utils)                               | v1.6    | phylogenetic tree | 12   | <1G  | <1G   | ≈1min   |
 
 # 文件和目录是名词+动词的形式，如：readsClassify
 
 # rule 是动词+名词的形式，如：classify_reads
 
-##   
+##      
 
 # TODO 这里以后可能会更新，这是run_dbcan推荐的数据库更新了，但是代码没更新的原因
 
