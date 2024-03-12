@@ -86,7 +86,7 @@ rule report_reads_classify:
     output:
         reads_classify_report=config["root"] + "/" + config["folder"]["reports"] + "/02_reads_classify.report"
     run:
-        report_list = ['Eukaryota', 'Fungi', 'Bacteria', 'Viruses', 'Archaea', 'unclassified', 'Homo sapiens']
+        report_list = ['unclassified', 'root', 'Eukaryota', 'Homo sapiens', 'Fungi', 'Bacteria', 'Archaea', 'Viruses']
         res_dict = {}
         for k_file in input.kraken2_report:
             sample = os.path.basename(k_file).split('.')[0]
@@ -99,8 +99,9 @@ rule report_reads_classify:
                     if taxon in report_list:
                         res_dict[sample][taxon] = counts
         table = pd.DataFrame(res_dict).transpose().astype(int)
-        table['unclassified(%)'] = table['unclassified'].div(table.sum(axis=1)).multiply(100)
-        table['human(%)'] = table['Homo sapiens'].div(table.sum(axis=1)).multiply(100)
-        table['known_microbiome(%)'] = 100 - table['unclassified(%)'] - table['human(%)']
+        table['total'] = table['unclassified'] + table['root']
+        table['unclassified(%)'] = table['unclassified(%)'] = table['unclassified'].div(table['total']).multiply(100)
+        table['known_microbiome(%)'] = table['root'].div(table['total']).multiply(100)
+        table['human(%)'] = table['Homo sapiens'].div(table['total']).multiply(100)
         table = table.sort_index()
         table.to_csv(output.reads_classify_report, sep="\t")
