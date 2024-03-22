@@ -71,7 +71,7 @@ rule dereplicate_bins:
     log:
         config["root"] + "/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.log"
     threads:
-        96
+        64 # MAX can not be more than 64
     message:
         "17: Dereplicate bins at species and strain level ----------------------"
     shell:
