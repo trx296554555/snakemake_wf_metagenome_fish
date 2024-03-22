@@ -25,16 +25,19 @@ co_assemble:
 contigs_binning:
     enable: True
 bins_dereplicate:
-    enable: False
+    enable: True
     anno_level: strain
 bins_classify:
-    enable: True
+    enable: False
+bins_recall:
+    enable: False
+    other_mags_list: [human_gut_v2.02, mouse_gut_v1.0, non_model_fish_gut_v2.0, zebrafish_fecal_v1.0]
 bins_anno:
     prokka_enable: False
-    rgi_enable: True
-    dbcan_enable: True
-    vfdb_enable: True
-    eggnog_enable: True
+    rgi_enable: False
+    dbcan_enable: False
+    vfdb_enable: False
+    eggnog_enable: False
 # Database
 db_root: /home/user002/database
 db:
@@ -50,6 +53,7 @@ db:
     checkm: checkm_20150116_db
     gtdbtk: gtdbtk_20231214_db
     taxonkit: taxonkit_20240108_db
+    mag_db: download_MAGs_20240322_db
 # Folder
 envs: workflow/config/envs
 scripts: workflow/scripts
@@ -73,6 +77,7 @@ folder:
     bins_refine: 08_bin_refine
     bins_dereplication: 09_dereplication
     bins_classify: 10_bin_classify
+    bins_recall: 10_bin_recall
     bins_anno_prokka: 11_bin_annotation/00_prokka
     bins_gene_quant: 11_bin_annotation/01_gene_quant
     bins_anno_rgi: 11_bin_annotation/02_rgi

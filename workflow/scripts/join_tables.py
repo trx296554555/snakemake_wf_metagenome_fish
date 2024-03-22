@@ -1,41 +1,21 @@
 #!/usr/bin/env python
-
-"""
-Join a set of gene, pathway, or taxonomy tables into a single table
-
-This module will join gene and pathway tables output by HUMAnN. 
-
-Dependencies: Biom (only required if running with .biom files)
-
-To Run: 
-$ ./join_tables.py -i <input_dir> -o <gene_table.{tsv,biom}>
-
-"""
-
 import argparse
 import sys
 import os
 import re
 import pandas as pd
 
+
+"""
+Join a set of gene, pathway, or taxonomy tables into a single table
+This module will join gene and pathway tables output by salmon_anno_integration.py 
+To Run: 
+$ ./join_tables.py -i <input_dir> -o <gene_table.tsv>
+"""
+
+
 GENE_TABLE_DELIMITER = "\t"  # the delimiter used in the gene table
 GENE_TABLE_COMMENT_LINE = "#"  # the line which indicates the header
-
-
-def get_header(gene_table):
-    """
-    Process through the header portion of the gene table file
-    """
-    # find the headers in the gene table
-    with open(gene_table, "r") as gene_table_handle:
-        header = gene_table_handle.readline().strip()
-        header = '#'  # TODO: delete this line
-    if header.startswith(GENE_TABLE_COMMENT_LINE):
-        return 0
-    else:
-        sys.exit("File does not have a required header: " + gene_table +
-                 " . Please add a header which includes the indicator: " +
-                 GENE_TABLE_COMMENT_LINE)
 
 
 def join_gene_tables(gene_tables, output, verbose=None):
@@ -46,7 +26,6 @@ def join_gene_tables(gene_tables, output, verbose=None):
     for gene_table in gene_tables:
         if verbose:
             print("Reading gene table: " + gene_table)
-        get_header(gene_table)
         current_df = pd.read_table(gene_table, comment=GENE_TABLE_COMMENT_LINE, index_col=0)
         if data_df is None:
             data_df = current_df

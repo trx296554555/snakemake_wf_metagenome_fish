@@ -22,7 +22,7 @@ Phylogenetic trees are inferred using IQ-TREE v2.1.3.
 
 configfile: "workflow/config/config.yaml"
 
-MITO_CDS_LIST = ['COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6', 'ATP6', 'ATP8']
+MITO_CDS_LIST = ['COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ATP6', 'ATP8']  # ND6 excluded
 all_cds_list = glob_wildcards(config["root"] + "/" + config["folder"]["mitotree"] + "/cds/" + "{cds}.fa")
 use_for_tree_cds = [cds for cds in all_cds_list.cds if cds in MITO_CDS_LIST]
 

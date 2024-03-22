@@ -284,11 +284,106 @@ rule generate_MAGs_classify_report:
         table.to_csv(output.merge_classify_report,sep="\t",index=False)
 
 
+rule get_other_MAGs_salmon_index:
+    input:
+        concatenation_MAGs_fa=config["db_root"] + "/" + config["db"]["mag_db"] + "/{other_mags}_concatenation.fa",
+    output:
+        index=directory(
+            config["root"] + "/" + config["folder"]["bins_recall"] + "/all_salmon_index/{other_mags}_index"),
+        done=touch(
+            config["root"] + "/" + config["folder"]["bins_recall"] + "/all_salmon_index/{other_mags}_index.done")
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "salmon.yaml"
+    message:
+        "18.5 Indexing of other MAGs"
+    threads:
+        24
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["bins_recall"] + "/{other_mags}_salmon_index.log"
+    log:
+        config["root"] + "/" + config["folder"]["bins_recall"] + "/all_salmon_index/{other_mags}_index.log"
+    shell:
+        """
+        salmon index -t {input.concatenation_MAGs_fa} -i {output.index} -p {threads} > {log} 2>&1
+        """
+
+
+rule recall_to_other_MAGs:
+    input:
+        index=config["root"] + "/" + config["folder"]["bins_recall"] + "/all_salmon_index/{other_mags}_index",
+        fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
+        fq2=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_2.fq",
+    output:
+        expression=config["root"] + "/" + config["folder"][
+            "bins_recall"] + "/quant_MAGs/{other_mags}/{sample}/{sample}.sf",
+    conda:
+        config["root"] + "/" + config["envs"] + "/" + "salmon.yaml"
+    threads:
+        12
+    benchmark:
+        config["root"] + "/benchmark/" + config["folder"]["bins_recall"] + "/quant_MAGs/{other_mags}_{sample}.quant.log"
+    log:
+        config["root"] + "/" + config["folder"]["bins_recall"] + "/quant_MAGs/{other_mags}/{sample}/{sample}.quant.log"
+    message:
+        "18.6 Quantify other MAGs expression using salmon"
+    params:
+        dir=config["root"] + "/" + config["folder"]["bins_recall"] + "/quant_MAGs/{other_mags}/{sample}"
+    shell:
+        """
+        salmon quant -i {input.index} -l A --meta -1 {input.fq1} -2 {input.fq2} \
+        -o {params.dir} -p {threads} --validateMappings --seqBias --quiet > {log} 2>&1
+        mv {params.dir}/quant.sf {output.expression}
+        """
+
+
+rule generate_other_MAGs_classify_report:
+    input:
+        all_expression=expand(config["root"] + "/" + config["folder"][
+            "bins_recall"] + "/quant_MAGs/{other_mags}/{sample}/{sample}.sf",other_mags=config["bins_recall"][
+            "other_mags_list"],sample=get_run_sample()),
+    output:
+        other_classify_report_list=expand(
+            config["root"] + "/" + config["folder"][
+                "bins_recall"] + "/{other_mags}_MAGs_classify_report.tsv",other_mags=
+            config["bins_recall"]["other_mags_list"])
+    params:
+        classify_tsv_db=config["db_root"] + "/" + config["db"]["mag_db"]
+    run:
+        def get_bins_counts_from_expression(sf, sample_name):
+            raw_df = pd.read_csv(sf,sep="\t",header=0)
+            raw_df['MAGs'] = raw_df['Name'].apply(lambda x: x.split("_")[0])
+            # Group by MAGs name, and then sum each set of NumReads
+            raw_df = raw_df.groupby(['MAGs']).agg({'NumReads': 'sum'}).reset_index()
+            raw_df.rename(columns={'NumReads': sample_name},inplace=True)
+            return raw_df
+
+
+        for out_rpt in output.other_classify_report_list:
+            other_mag = os.path.basename(out_rpt).split("_MAGs_")[0]
+            classify_tsv = params.classify_tsv_db + "/" + other_mag + "_metadata.tsv"
+
+            table = pd.DataFrame(columns=["MAGs"])
+            for raw_sf in input.all_expression:
+                if other_mag in raw_sf:
+                    sample = os.path.basename(raw_sf).split(".")[0]
+                    # Merge by MAGs column
+                    table = pd.merge(table,get_bins_counts_from_expression(raw_sf,sample),on='MAGs',how='outer')
+
+            classify_anno_table = pd.read_csv(classify_tsv,sep="\t",header=0)
+            table = pd.merge(table,classify_anno_table,left_on='MAGs',right_on='Genome',how='left')
+            table['Taxon'] = table['Lineage'].apply(lambda x: x.replace('d__','k__').replace(';','|'))
+            table = table[["MAGs", "Taxon"] + get_run_sample()]
+            table.rename(columns={'MAGs': 'TaxID'},inplace=True)
+            table.sort_values(by=['Taxon'],inplace=True)
+            table.to_csv(out_rpt,sep="\t",index=False)
+
+
 rule report_MAGs_classify:
     input:
-        all_classify_tsv=config["root"] + "/" + config["folder"][
-            "bins_classify"] + "/gtdbtk_classify_wf/res.all.summary.tsv",
-        merge_classify_report=config["root"] + "/" + config["folder"]["bins_classify"] + "/MAGs_classify_report.tsv"
+        merge_classify_report=config["root"] + "/" + config["folder"]["bins_classify"] + "/MAGs_classify_report.tsv",
+        other_classify_report_list=expand(config["root"] + "/" + config["folder"][
+            "bins_recall"] + "/{other_mags}_MAGs_classify_report.tsv",other_mags=config["bins_recall"][
+            "other_mags_list"]) if config["bins_recall"]["enable"] else []
     output:
         MAGs_classify_report=config["root"] + "/" + config["folder"]["reports"] + "/08_MAGs_classify.report"
     params:
@@ -297,20 +392,22 @@ rule report_MAGs_classify:
         # Statistical recall rate
         table = pd.DataFrame(columns=["Sample"])
         reads_table = pd.read_csv(params.total_reads,sep="\t",header=0)
-        counts_table = pd.read_csv(input.merge_classify_report,sep="\t",header=0)
-        counts_table['k__'] = counts_table['Taxon'].apply(lambda x: x.split("|")[0].replace('k__',''))
-        counts_table = counts_table[["k__"] + get_run_sample()]
-        counts_table = counts_table.groupby(['k__']).agg('sum').T.reset_index()
-        microbe_list = counts_table.columns.tolist()[1:]
-        counts_table.rename(columns=counts_table.iloc[0]).reset_index(drop=True)
-
         table["Sample"] = get_run_sample()
-        table = pd.merge(table,counts_table,left_on='Sample',right_on='index')
         table = pd.merge(table,reads_table[['Unnamed: 0', 'final pair1']],left_on='Sample',right_on='Unnamed: 0')
+        table.drop(columns=['Unnamed: 0'],inplace=True)
         table.rename(columns={'final pair1': 'Total'},inplace=True)
-        table["Unclassified"] = table["Total"] - table[microbe_list].sum(axis=1)
 
-        for i in microbe_list:
-            table[i + "_Recall(%)"] = table[i] / table["Total"]
-        table = table[["Sample", "Total", "Unclassified"] + microbe_list + [x + "_Recall(%)" for x in microbe_list]]
+
+        all_report = [input.merge_classify_report] + input.other_classify_report_list
+        for classify_report in all_report:
+            prefix = os.path.basename(classify_report).split("_classify_")[0]
+            counts_table = pd.read_csv(classify_report,sep="\t",header=0)
+            counts_table['k__'] = counts_table['Taxon'].apply(lambda x: prefix + '_' + x.split("|")[0].replace('k__',''))
+            counts_table = counts_table[["k__"] + get_run_sample()]
+            counts_table = counts_table.groupby(['k__']).agg('sum').T.reset_index()
+            microbe_list = counts_table.columns.tolist()[1:]
+            counts_table.rename(columns=counts_table.iloc[0]).reset_index(drop=True)
+            table = pd.merge(table,counts_table,left_on='Sample',right_on='index')
+            table.drop(columns=['index'],inplace=True)
+
         table.to_csv(output.MAGs_classify_report,sep="\t",index=False)

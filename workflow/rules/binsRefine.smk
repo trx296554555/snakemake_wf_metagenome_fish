@@ -51,6 +51,8 @@ rule gather_all_bins:
         """
 
 
+# TODO 在项目完成后更改
+# 使用文本读入的方式，避免使用通配符造成的文件名过长
 rule dereplicate_bins:
     input:
         bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins",
@@ -63,19 +65,20 @@ rule dereplicate_bins:
     conda:
         config["root"] + "/" + config["envs"] + "/" + "drep.yaml"
     params:
-        comp=70,con=10,strain_ANI=0.99,species_ANI=0.95,nc=0.1,
+        comp=70,con=10,strW=0,strain_ANI=0.99,species_ANI=0.95,nc=0.1,
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.log"
     log:
         config["root"] + "/" + config["folder"]["bins_dereplication"] + "/drep_dereplicate_bins.log"
     threads:
-        64
+        96
     message:
         "17: Dereplicate bins at species and strain level ----------------------"
     shell:
         """
-        dRep dereplicate {output.strain_bins} -g {input.bins}/*.f*a -p {threads} -sa {params.strain_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} --S_algorithm fastANI > {log} 2>&1
-        dRep dereplicate {output.species_bins} -g {output.strain_bins}/dereplicated_genomes/*.f*a -p {threads} -sa {params.species_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} --S_algorithm fastANI --genomeInfo {output.checkm_results} >> {log} 2>&1
+        find {input.bins} -name "*.f*a"|xargs ls > {input.bins}/all_bins.list
+        dRep dereplicate {output.strain_bins} -g {input.bins}/all_bins.list -p {threads} -sa {params.strain_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} -strW {params.strW} --S_algorithm fastANI > {log} 2>&1
+        dRep dereplicate {output.species_bins} -g {output.strain_bins}/dereplicated_genomes/*.f*a -p {threads} -sa {params.species_ANI} -nc {params.nc} -comp {params.comp} -con {params.con} -strW {params.strW} --S_algorithm fastANI --genomeInfo {output.checkm_results} >> {log} 2>&1
         """
 
 
@@ -85,6 +88,7 @@ checkpoint get_MAGs:
         species_bins=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/species_bins",
     output:
         mags_dir=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins"),
+        mags_done=touch(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done"),
     params:
         anno_level=config["bins_dereplicate"]["anno_level"]
     shell:
@@ -108,9 +112,9 @@ rule report_contigs_binning:
     input:
         all_bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/",
         gather_done=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins/gather.done",
-        mags_done=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done",
         checkm_results=config["root"] + "/" + config["folder"][
             "bins_dereplication"] + "/strain_bins/data_tables/genomeInfo.csv",
+        mags_done=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/get_MAGs_bins.done",
     output:
         contigs_binning_report=config["root"] + "/" + config["folder"]["reports"] + "/07_contigs_binning.report"
     params:

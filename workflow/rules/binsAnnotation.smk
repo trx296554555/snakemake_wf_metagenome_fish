@@ -53,6 +53,8 @@ rule report_new_MAGs:
         unpack(collect_MAGs_gene_info),
         all_classify_tsv=config["root"] + "/" + config["folder"][
             "bins_classify"] + "/gtdbtk_classify_wf/res.all.summary.tsv",
+        checkm_results=config["root"] + "/" + config["folder"][
+            "bins_dereplication"] + "/strain_bins/data_tables/genomeInfo.csv",
     output:
         new_MAGs_report=config["root"] + "/" + config["folder"]["reports"] + "/09_new_MAGs.report",
     run:
@@ -70,14 +72,27 @@ rule report_new_MAGs:
                     stat_dict[line[0]] = line[1]
             all_stat[bin_name] = stat_dict
         stat_table = pd.DataFrame(all_stat).T
-        stat_table = stat_table[["contigs", "bases", "gene", "CDS", "tRNA", "tmRNA", "rRNA", "repeat_region", "N50", "GC(%)"]]
+        stat_table = stat_table[
+            ["contigs", "bases", "gene", "CDS", "tRNA", "tmRNA", "rRNA", "repeat_region", "N50", "GC(%)"]]
         stat_table.fillna(0,inplace=True)
+
+        # add checkm results
+        checkm_table = pd.read_csv(input.checkm_results,sep=",",header=0)
+        checkm_table["strain_bins"] = checkm_table["genome"].apply(lambda x: x.replace(".fa",""))
+        checkm_table = checkm_table[["strain_bins", "completeness", "contamination"]]
+        checkm_table = checkm_table.set_index("strain_bins")
+
         table = pd.read_csv(input.all_classify_tsv,sep="\t",header=0)
         # table 的strain_bins列 设置为索引且保留
         table = table.set_index("strain_bins")
-        table = pd.concat([table,stat_table],axis=1)
+        table = pd.concat([table, stat_table],axis=1)
+        table = pd.concat([table, checkm_table],axis=1,join="inner")
         table = table.reset_index()
-        table = table.rename(columns={"index":"strain_bins"})
+        table = table.rename(columns={"index": "strain_bins"})
+        # 调整列的顺序
+        table = table[
+            ["strain_bins", "species_bins", "classification", "final_ani", "completeness", "contamination", "contigs",
+             "bases", "N50", "GC(%)", "gene", "CDS", "tRNA", "tmRNA", "rRNA", "repeat_region"]]
         table.to_csv(output.new_MAGs_report,sep="\t",header=True,index=False)
 
 
@@ -87,9 +102,9 @@ def collect_MAGs(wildcards):
     mag_names = [os.path.basename(x).replace('.fa','') for x in mag_bins]
     prokka_gene = [os.path.join(config["root"],config["folder"]["bins_anno_prokka"],bin,bin + ".gene.fa") for bin in
                    mag_names]
-    prokka_prptein = [os.path.join(config["root"],config["folder"]["bins_anno_prokka"],bin,bin + ".protein.faa")
+    prokka_protein = [os.path.join(config["root"],config["folder"]["bins_anno_prokka"],bin,bin + ".protein.faa")
                       for bin in mag_names]
-    return {"gene": prokka_gene, "protein": prokka_prptein}
+    return {"gene": prokka_gene, "protein": prokka_protein}
 
 
 rule get_MAGs_prokka_anno_res:
@@ -418,9 +433,12 @@ rule generate_MAGs_eggnog_report:
     output:
         eggnog_go_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.go.tsv",
         eggnog_ko_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.ko.tsv",
-        eggnog_cog_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.cog.tsv",
-        eggnog_cog_cate_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.cog_cate.tsv",
-        eggnog_pref_tsv=config["root"] + "/" + config["folder"]["bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.pref.tsv",
+        eggnog_cog_tsv=config["root"] + "/" + config["folder"][
+            "bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.cog.tsv",
+        eggnog_cog_cate_tsv=config["root"] + "/" + config["folder"][
+            "bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.cog_cate.tsv",
+        eggnog_pref_tsv=config["root"] + "/" + config["folder"][
+            "bins_anno_eggnog"] + "/{sample}/{sample}.eggnog.pref.tsv",
     message:
         "26.2: Combine quantification and annotation results to generate eggnog reports------------------------"
     params:
