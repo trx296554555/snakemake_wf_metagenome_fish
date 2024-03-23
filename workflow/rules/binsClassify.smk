@@ -397,7 +397,6 @@ rule report_MAGs_classify:
         table.drop(columns=['Unnamed: 0'],inplace=True)
         table.rename(columns={'final pair1': 'Total'},inplace=True)
 
-
         all_report = [input.merge_classify_report] + input.other_classify_report_list
         for classify_report in all_report:
             prefix = os.path.basename(classify_report).split("_classify_")[0]
@@ -411,3 +410,7 @@ rule report_MAGs_classify:
             table.drop(columns=['index'],inplace=True)
 
         table.to_csv(output.MAGs_classify_report,sep="\t",index=False)
+
+        collect_result(input.merge_classify_report)
+        if input.other_classify_report_list:
+            collect_result(input.other_classify_report_list,'other_bins_classify')

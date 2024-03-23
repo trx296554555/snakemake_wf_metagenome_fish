@@ -1,7 +1,3 @@
-import glob
-import os
-
-
 def get_das_tool_names(wildcards):
     das_bins_dir = checkpoints.refine_bins_DAS_tool.get(**wildcards).output.bins
     das_bins = glob.glob(das_bins_dir + "/*.fa_DASTool_bins/*.f*a")
@@ -51,8 +47,6 @@ rule gather_all_bins:
         """
 
 
-# TODO 在项目完成后更改
-# 使用文本读入的方式，避免使用通配符造成的文件名过长
 rule dereplicate_bins:
     input:
         bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins",

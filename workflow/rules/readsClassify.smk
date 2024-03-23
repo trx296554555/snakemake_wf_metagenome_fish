@@ -1,6 +1,3 @@
-import os
-import pandas as pd
-
 rule generate_kraken2_report:
     input:
         fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
@@ -105,3 +102,5 @@ rule report_reads_classify:
         table['human(%)'] = table['Homo sapiens'].div(table['total']).multiply(100)
         table = table.sort_index()
         table.to_csv(output.reads_classify_report, sep="\t")
+
+        collect_result(input.merge_bracken)

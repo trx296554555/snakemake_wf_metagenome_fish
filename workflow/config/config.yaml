@@ -28,16 +28,16 @@ bins_dereplicate:
     enable: True
     anno_level: strain
 bins_classify:
-    enable: False
+    enable: True
 bins_recall:
-    enable: False
+    enable: True
     other_mags_list: [human_gut_v2.02, mouse_gut_v1.0, non_model_fish_gut_v2.0, zebrafish_fecal_v1.0]
 bins_anno:
-    prokka_enable: False
-    rgi_enable: False
-    dbcan_enable: False
-    vfdb_enable: False
-    eggnog_enable: False
+    prokka_enable: True
+    rgi_enable: True
+    dbcan_enable: True
+    vfdb_enable: True
+    eggnog_enable: True
 # Database
 db_root: /home/user002/database
 db:

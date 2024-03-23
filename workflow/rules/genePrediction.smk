@@ -1,5 +1,3 @@
-import os
-
 rule predict_coding_genes:
     input:
         contigs=config["root"] + "/" + config["folder"]["assemble_contigs"] + "/{sample}/{sample}.contigs.fa",

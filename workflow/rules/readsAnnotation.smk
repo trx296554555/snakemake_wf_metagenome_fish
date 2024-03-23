@@ -1,7 +1,3 @@
-import os
-import shutil
-import pandas as pd
-
 rule generate_reads_humann3_report:
     input:
         fq1=config["root"] + "/" + config["folder"]["rm_host"] + "/{sample}/{sample}_paired_1.fq",
@@ -356,7 +352,7 @@ rule report_reads_annotation:
             'humann3': config["db_root"] + "/" + config["db"][
                 "humann_chocophlan"] + "/../metacyc_pathway-2023-06-27_clean.csv",
             'rgi': config["db_root"] + "/" + config["db"]["rgi"] + "/rgi_card_info.zip",
-            'dbcan': config["db_root"] + "/" + config["db"]["dbcan"] + "/fam-substrate-mapping-08012023.tsv",
+            'dbcan': config["db_root"] + "/" + config["db"]["dbcan"] + "/fam-substrate-mapping.tsv",
             'vfdb': config["db_root"] + "/" + config["db"]["vfdb"] + "/core_dataset/core_pro_info.txt"
         }
 
@@ -396,3 +392,5 @@ rule report_reads_annotation:
                 df_stat = statistical_other_res(input[db], db)
                 res_df = pd.concat([res_df, df_stat],axis=0)
         res_df.to_csv(output[0],sep="\t",header=True,index=True)
+
+        collect_result(input, 'reads_func_anno')

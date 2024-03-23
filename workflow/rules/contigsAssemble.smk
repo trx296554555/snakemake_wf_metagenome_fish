@@ -1,6 +1,3 @@
-import os
-import pandas as pd
-
 def get_co_assemble_fq(wildcards):
     co_assemble_file = config['root'] + '/workflow/config/co_assemble_list.csv'
     if wildcards.sample in get_co_item():

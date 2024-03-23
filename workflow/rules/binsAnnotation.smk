@@ -569,3 +569,5 @@ rule report_MAGs_annotation:
                 df_stat = statistical_other_res(input[db],db)
                 res_df = pd.concat([res_df, df_stat],axis=0)
         res_df.to_csv(output.MAGs_annotation_report,sep="\t",header=True,index=True)
+
+        collect_result(input,'bins_func_anno')

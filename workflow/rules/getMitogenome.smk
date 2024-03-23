@@ -122,6 +122,7 @@ rule get_mitogenome:
         fi
         """
 
+
 rule report_get_mitogenome:
     input:
         done_files=expand(config["root"] + "/" + config["folder"]["mitogenome"] + "/{individual}/mitogenome.done", individual=get_run_individual()),

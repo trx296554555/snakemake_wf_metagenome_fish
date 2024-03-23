@@ -1,7 +1,4 @@
 import os
-import pandas as pd
-import numpy as np
-
 
 if os.path.exists(f'{config["root"]}/{config["meta"]["sampleList"]}'):
     all_sample_df = pd.read_csv(f'{config["root"]}/{config["meta"]["sampleList"]}')
@@ -67,6 +64,22 @@ def get_co_item():
         os.mkdir(tmp_co_assemble_path)
         set_co_assemble()
         return os.listdir(tmp_co_assemble_path)
+
+
+def collect_result(res_tsv, sub_dir=None):
+    if sub_dir:
+        tsv_res_path = config["root"] + "/" + config["folder"]["reports"] + "/00_result_tsv/" + sub_dir
+    else:
+        tsv_res_path = config["root"] + "/" + config["folder"]["reports"] + "/00_result_tsv"
+    if not os.path.exists(tsv_res_path):
+        os.makedirs(tsv_res_path)
+    if isinstance(res_tsv,list):
+        for res in res_tsv:
+            file_name = os.path.basename(res)
+            shutil.copy(res,os.path.join(tsv_res_path,file_name))
+    else:
+        file_name = os.path.basename(res_tsv)
+        shutil.copy(res_tsv,os.path.join(tsv_res_path,file_name))
 
 
 def get_report():
