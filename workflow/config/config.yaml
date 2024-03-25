@@ -25,7 +25,7 @@ co_assemble:
 contigs_binning:
     enable: True
 bins_dereplicate:
-    enable: True
+    enable: False
     anno_level: strain
 bins_classify:
     enable: True
@@ -33,7 +33,7 @@ bins_recall:
     enable: True
     other_mags_list: [human_gut_v2.02, mouse_gut_v1.0, non_model_fish_gut_v2.0, zebrafish_fecal_v1.0]
 bins_anno:
-    prokka_enable: True
+    prokka_enable: False
     rgi_enable: True
     dbcan_enable: True
     vfdb_enable: True

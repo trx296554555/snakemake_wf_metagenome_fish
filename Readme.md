@@ -42,34 +42,27 @@ snakemake -c12 --use-conda --conda-create-envs-only
 snakemake -c96 --use-conda -np
 ctrl + a + d
 snakemake --forceall --rulegraph |sed '1d'| dot -Tpdf > fish_rules.pdf
-
 tar -chf $(hostname).report.tar reports/* && pigz $(hostname).report.tar && sz $(hostname).report.tar.gz && rm -f $(hostname).report.tar.gz 
-cd /home/user003/fish/10_bin_classify/ && cp MAGs_classify_report.tsv $(hostname).MAGs_classify_report.tsv && sz $(hostname).MAGs_classify_report.tsv && rm -f $(hostname).MAGs_classify_report.tsv
-tar -chf bin_anno.tar 00_prokka/all_mags/*prune* */annotation && pigz bin_anno.tar
+
 ```
 
 ### 分布式运算时，不同服务器单独分bins的结果需要合并到一起，完成去冗余后，将结果分给各服务器在继续后续分析
+### 同时也推荐将 binsClassify 和 prokka注释 在main server上一起运行；其他功能注释可以在各服务器上分别运行
 
 ```shell
-## merge ## bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins"
+## other server ## bins=config["root"] + "/" + config["folder"]["bins_refine"] + "/all_bins"
 tar -chf $(hostname).all_bins.tar all_bins/*.fa && pigz $(hostname).all_bins.tar
-# download and merge
+## main server ##
 mkdir -p /home/user003/fish/08_bin_refine/other_bins/tmp
 for i in /home/user003/fish/08_bin_refine/other_bins/tmp/*;do ln -s $i all_bins/;done
-## apart ## mags_dir=directory(config["root"] + "/" + config["folder"]["bins_dereplication"] + "/mag_bins")
-tar -chf mag_bins.tar mag_bins/*.fa && pigz mag_bins.tar
-unpigz mag_bins.tar.gz && tar -xf mag_bins.tar && rm -f mag_bins.tar
-## apart ## checkm_results=config["root"] + "/" + config["folder"]["bins_dereplication"] + "/strain_bins/data_tables/genomeInfo.csv"
-sz /home/user003/fish/09_dereplication/strain_bins/data_tables/genomeInfo.csv
-mkdir -p /home/user003/fish/09_dereplication/strain_bins/data_tables && cd /home/user003/fish/09_dereplication/strain_bins/data_tables && rz
-```
-
-### 分布式运算时，避免不同服务器反复运行同一耗时较长任务时，以下文件可以手动拷贝到其他服务器上，以避免重复运行
-
-```shell
-## 
-
-
+## main server ## concatenation_MAGs_fa all_classify_tsv 
+pigz -k /home/user003/fish/09_dereplication/concatenation_MAGs/concatenation_MAGs.fa && sz /home/user003/fish/09_dereplication/concatenation_MAGs/concatenation_MAGs.fa.gz
+sz /home/user003/fish/10_bin_classify/gtdbtk_classify_wf/res.all.summary.tsv
+tar -chf bin_anno.tar 11_bin_annotation/00_prokka/all_mags/*prune* 11_bin_annotation/*/annotation && pigz bin_anno.tar
+## other server ##
+mkdir -p /home/user003/fish/09_dereplication/concatenation_MAGs && cd /home/user003/fish/09_dereplication/concatenation_MAGs && rz
+mkdir -p /home/user003/fish/10_bin_classify/gtdbtk_classify_wf && cd /home/user003/fish/10_bin_classify/gtdbtk_classify_wf && rz
+unpigz bin_anno.tar.gz && tar -xf bin_anno.tar && rm -f bin_anno.tar
 ```
 
 ---

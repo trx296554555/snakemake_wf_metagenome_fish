@@ -36,7 +36,7 @@ rule get_MAGs_salmon_index:
     message:
         "18.2 Indexing of MAGs"
     threads:
-        12
+        24
     benchmark:
         config["root"] + "/benchmark/" + config["folder"]["bins_dereplication"] + "/mags_salmon_index.log"
     log:
