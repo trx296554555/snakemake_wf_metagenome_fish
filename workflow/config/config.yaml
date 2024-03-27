@@ -31,6 +31,7 @@ bins_classify:
     enable: True
 bins_recall:
     enable: True
+    # human_gut_v2.02, mouse_gut_v1.0, non_model_fish_gut_v2.0, zebrafish_fecal_v1.0
     other_mags_list: [human_gut_v2.02, mouse_gut_v1.0, non_model_fish_gut_v2.0, zebrafish_fecal_v1.0]
 bins_anno:
     prokka_enable: False
@@ -38,6 +39,12 @@ bins_anno:
     dbcan_enable: True
     vfdb_enable: True
     eggnog_enable: True
+virus_identify:
+    enable: True
+    tools: [virsorter2, deepvirfinder, vibrant] # virsorter2, deepvirfinder, vibrant
+    min_virus_len: 5000
+virus_derplication:
+    enable: True
 # Database
 db_root: /home/user002/database
 db:
@@ -54,6 +61,11 @@ db:
     gtdbtk: gtdbtk_20231214_db
     taxonkit: taxonkit_20240108_db
     mag_db: download_MAGs_20240322_db
+virus_db:
+    virsorter2: virus_db/virsorter2_20240326_db
+    deepvirfinder: virus_db/deepvirfinder_20240326_db
+    vibrant: virus_db/vibrant_20240326_db
+    checkv: virus_db/checkv_20240326_db
 # Folder
 envs: workflow/config/envs
 scripts: workflow/scripts
@@ -84,3 +96,8 @@ folder:
     bins_anno_dbcan: 11_bin_annotation/03_dbcan
     bins_anno_vfdb: 11_bin_annotation/04_vfdb
     bins_anno_eggnog: 11_bin_annotation/05_eggnog
+    virus_identify: 12_virus_identification/01_identify
+    virus_dereplication: 12_virus_identification/02_dereplication
+    virus_checkv: 12_virus_identification/03_checkv
+    virus_cluster: 12_virus_identification/04_votu
+

@@ -109,6 +109,9 @@ def get_report():
             "prokka_enable"] else "",
         config["root"] + "/" + config["folder"]["reports"] + "/10_bin_annotation.report" if mags_anno_enable else "",
         # TODO 需要一个清理中间文件的rule 在工作流结束后运行
+        config["root"] + "/" + config["folder"]["virus_dereplication"] + "/gather.done" if config["virus_identify"][
+            "enable"] else "",
+        # config["root"] + "/" + config["folder"]["virus_cluster"] + "/final_virus_otu.fa"
     ]
     report_list = [i for i in report_list if i != ""]
     return report_list

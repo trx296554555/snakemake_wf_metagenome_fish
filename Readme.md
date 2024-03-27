@@ -47,6 +47,7 @@ tar -chf $(hostname).report.tar reports/* && pigz $(hostname).report.tar && sz $
 ```
 
 ### 分布式运算时，不同服务器单独分bins的结果需要合并到一起，完成去冗余后，将结果分给各服务器在继续后续分析
+
 ### 同时也推荐将 binsClassify 和 prokka注释 在main server上一起运行；其他功能注释可以在各服务器上分别运行
 
 ```shell
@@ -88,15 +89,19 @@ unpigz bin_anno.tar.gz && tar -xf bin_anno.tar && rm -f bin_anno.tar
 | [checkm](https://github.com/Ecogenomics/CheckM/wiki)                                  | v1.2.2  | bin quality              | 64   | <10G | <1G   | ≈10min  |
 | [drep](https://github.com/MrOlm/drep)                                                 | v.3.4.5 | bin dereplication        | 64   | <10G | <1G   | ≈10min  |
 | [GTDB-Tk](https://github.com/Ecogenomics/GTDBTk)                                      | v2.3.2  | bin taxonomy             | 12   | <10G | <1G   | ≈10min  |
-| [salmon] (https://github.com/COMBINE-lab/salmon)                                      | v1.10.2 | quantification estimates | 12   | <10G | <1G   | ≈10min  |
+| [salmon](https://github.com/COMBINE-lab/salmon)                                       | v1.10.2 | quantification estimates | 12   | <10G | <1G   | ≈10min  |
 | [prokka](https://github.com/tseemann/prokka)                                          | v1.14.6 | bins功能注释                 | 12   | <10G | <1G   | ≈10min  |
 | [seqkit](https://bioinf.shenwei.me/seqkit/)                                           | v2.6.1  | 序列处理                     | 12   | <1G  | <1G   | ≈1min   |
 | [muscle](https://github.com/rcedgar/muscle)                                           | v5.1    | 序列比对                     | 12   | <1G  | <1G   | ≈1min   |
 | [MACSE](https://www.agap-ge2pop.org/macse/)                                           | v2.07   | refine MSA               | 12   | <1G  | <1G   | ≈1min   |
 | [trimAl](http://trimal.cgenomics.org/use_of_the_command_line_trimal_v1.2)             | v1.4.1  | MSA修剪                    | 12   | <1G  | <1G   | ≈1min   |
 | [iqtree](https://github.com/iqtree/iqtree2)                                           | v2.2.6  | phylogenetic tree        | 12   | <1G  | <1G   | ≈1min   |
-| [ASTER]（https://github.com/chaoszhang/ASTER）                                          | v1.16   | species tree             | 12   | <1G  | <1G   | ≈1min   |
+| [ASTER](https://github.com/chaoszhang/ASTER)                                          | v1.16   | species tree             | 12   | <1G  | <1G   | ≈1min   |
 | [newick_utils](https://github.com/tjunier/newick_utils)                               | v1.6    | phylogenetic tree        | 12   | <1G  | <1G   | ≈1min   |
+| [virsorter2](https://github.com/jiarong/VirSorter2)                                   | v2.2.4  | virus prediction         | 12   | <10G | <10G  | ≈10min  |
+| [DeepVirFinder](https://github.com/jessieren/DeepVirFinder)                           | v1.0.0  | virus prediction         | 12   | <10G | <10G  | ≈10min  |
+| [VIBRANT](https://github.com/AnantharamanLab/VIBRANT)                                 | v1.2.1  | virus prediction         | 12   | <10G | <10G  | ≈10min  |
+| [checkv](https://bitbucket.org/berkeleylab/checkv/src/master/)                        | v1.0.1  | virus quality            | 12   | <10G | <10G  | ≈10min  |
 
 ## Lint
 
