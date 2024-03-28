@@ -207,19 +207,16 @@ with open(input_fa, 'r') as faLines :
 
         print("   processing line "+str(lineNum))
         pool = multiprocessing.Pool(core_num)
-        head, score, pvalue = zip(*pool.map(pred, range(0, len(code))))
+        # Changelog: added try-except block to handle the case where no virus sequences are found
+        try:
+            head, score, pvalue = zip(*pool.map(pred, range(0, len(code))))
+        except ValueError as e:
+            print("error: no virus sequences found")
+            with open(os.path.join(output_dir, os.path.basename(input_fa)+'.failed'), 'w') as f:
+                f.write("no virus sequences found")
         pool.close()
 
 predF.close()
 
 print("3. Done. Thank you for using DeepVirFinder.")
 print("   output in {}".format(outfile))
-
-
-
-
-
-
-
-
-
